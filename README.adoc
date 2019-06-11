@@ -56,9 +56,9 @@ If there is a cost - and let's just acknowledge that there is *_always_* a cost 
 
 I have some good news and some bad news.
 
-This library models an HTTP request using a Finite State Machine (hereafter FSM) - one which captures the various failure paths and retry paths, etc. That leads to a robust and understandable request process.
+This library models an HTTP request using a Finite State Machine (hereafter FSM) - one which captures the various failure paths and retry paths, etc. That leads to a robust and understandable request process. So that's good. 
 
-Also, this library wraps `fetch`, making it central to the FSM, and that means the network-level mechanics of a request are supplied in a browser-modern way. 
+Also, this library wraps `fetch`, making it central to the FSM, and that means the network-level mechanics of a request are supplied in a browser-modern way. Again, good.
 
 But, yeah, that's the end of the good news. The bad news is that you need to do the rest of the work.
 
