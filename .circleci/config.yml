@@ -39,6 +39,7 @@ orbs:
               paths:
                 - ~/.m2
                 - node_modules
+                - .shadow-cljs
               key: v1-dependencies-{{ checksum "project.clj" }}
 
 jobs:
