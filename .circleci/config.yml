@@ -23,9 +23,11 @@ orbs:
                 # fallback to using the latest cache if no exact match is found
                 - v1-dependencies-
 
-          # run tests, we also call lein deps explicitly to force lein-npm to install.
           - run:
-              command: lein do deps, karma-once
+              command: npm install
+
+          - run:
+              command: lein run -m shadow.cljs.devtools.cli compile ci
 
           - run:
               command: sudo npm install -g karma-cli

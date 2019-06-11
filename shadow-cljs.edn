@@ -10,7 +10,7 @@
            :devtools  {:http-root "resources/public/js/test"
                        :http-port 8290}}
 
-          :karma-test
+          :ci
           {:target    :karma
            :ns-regexp "-test$"
            :output-to "target/ci.js"}}}

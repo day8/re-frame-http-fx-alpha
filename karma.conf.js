@@ -1,17 +1,17 @@
 module.exports = function (config) {
-  var root = "run/compiled/karma/test" // same as :output-dir
-  var junitOutputDir = process.env.CIRCLE_TEST_REPORTS || "run/compiled/karma/test/junit"
+  var junitOutputDir = process.env.CIRCLE_TEST_REPORTS || "target/junit"
 
   config.set({
+    browsers: ['ChromeHeadless'],
+    basePath: 'target',
+    files: ['ci.js'],
     frameworks: ['cljs-test'],
-    browsers: ['Chrome'],
-    files: [
-      root + '/../test.js', // same as :output-to
-      {pattern: root + '/../test.js.map', included: false},
-      {pattern: root + '/**/*.+(cljs|cljc|clj|js|js.map)', included: false}
-    ],
+    plugins: ['karma-cljs-test', 'karma-chrome-launcher'],
+    colors: true,
+    logLevel: config.LOG_INFO,
     client: {
-      args: ['day8.re_frame.http_fx_2_test_runner.run_karma']
+      args: ['shadow.test.karma.init'],
+      singleRun: true
     },
 
     // the default configuration
