@@ -1,3 +1,5 @@
+image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
+
 = Easy and Robust HTTP Requests
 
 ifdef::env-github[]
