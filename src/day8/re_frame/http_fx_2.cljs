@@ -38,49 +38,49 @@
 
 (defn request->js-init
   "Returns an init options js/Object to use as the second argument to js/fetch."
-  [{:http/keys [method headers body mode credentials cache redirect referrer integrity] :as request
-    :or        {http/mode "same-origin"
-                http/credentials "include"
-                http/redirect "follow"}}
+  [{:http/keys [method headers body mode credentials cache redirect referrer integrity] :as request}
    controller]
-  (cond->
-    #js {;; There is always a controller, as in our impl all requests can be
-         ;; aborted.
-         :signal      (.-signal controller)
+  (let [mode (or mode "same-origin")
+        credentials (or credentials "include")
+        redirect (or redirect "follow")]
+    (cond->
+      #js {;; There is always a controller, as in our impl all requests can be
+           ;; aborted.
+           :signal      (.-signal controller)
 
-         ;; There is always a method, as dispatch is via sub-effects like :http/get.
-         :method      method
+           ;; There is always a method, as dispatch is via sub-effects like :http/get.
+           :method      method
 
-         ;; Although the below keys are usually optional, the default between
-         ;; different browsers is inconsistent so we always set our own default.
+           ;; Although the below keys are usually optional, the default between
+           ;; different browsers is inconsistent so we always set our own default.
 
-         ;; Possible: cors no-cors same-origin navigate
-         :mode        mode
+           ;; Possible: cors no-cors same-origin navigate
+           :mode        mode
 
-         ;; Possible: omit same-origin include
-         :credentials credentials
+           ;; Possible: omit same-origin include
+           :credentials credentials
 
-         ;; Possible: follow error manual
-         :redirect    redirect}
+           ;; Possible: follow error manual
+           :redirect    redirect}
 
-    ;; Everything else is optional...
-    headers
-    (obj/set "headers" (headers->js headers))
+      ;; Everything else is optional...
+      headers
+      (obj/set "headers" (headers->js headers))
 
-    body
-    (obj/set "body" body)
+      body
+      (obj/set "body" body)
 
-    ;; Possible: default no-store reload no-cache force-cache only-if-cached
-    cache
-    (obj/set "cache" cache)
+      ;; Possible: default no-store reload no-cache force-cache only-if-cached
+      cache
+      (obj/set "cache" cache)
 
-    ;; Possible: no-referrer client
-    referrer
-    (obj/set "referrer" referrer)
+      ;; Possible: no-referrer client
+      referrer
+      (obj/set "referrer" referrer)
 
-    ;; Sub-resource integrity string
-    integrity
-    (obj/set "integrity" integrity)))
+      ;; Sub-resource integrity string
+      integrity
+      (obj/set "integrity" integrity))))
 
 (defn js-headers->clj
   "Returns a new ClojureScript map of the js/Headers JavaScript object."
@@ -366,9 +366,10 @@
   (fsm->! request-id :problem nil {:http/problem js-error}))
 
 (defn fetch
-  [{:http/keys [request-id url params timeout] :as request
-    :or        {:http/request-id (keyword (gensym "http-"))}}]
-  (let [url'     (str url (params->str params))
+  "Initiate the request. Returns nil."
+  [{:http/keys [request-id url params timeout] :as request}]
+  (let [request-id (or request-id (keyword (gensym "http-")))
+        url' (str url (params->str params))
         request' (-> request
                      (merge #:http {:request-id request-id
                                     :url        url'
@@ -382,7 +383,8 @@
             ::controller controller})
     (-> (timeout-race (js/fetch url' (request->js-init request' controller)) timeout)
         (.then (partial response-handler request-id))
-        (.catch (partial problem-handler request-id)))))
+        (.catch (partial problem-handler request-id)))
+    nil))
 
 (defmethod sub-effect :http/get
   [{url :http/get :as request}]

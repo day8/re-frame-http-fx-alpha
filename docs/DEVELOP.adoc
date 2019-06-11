@@ -1,0 +1,24 @@
+# `re-frame-http-fx-2` Development
+
+## Requirements
+
+- [node.js](https://nodejs.org) (v6.0.0+, most recent version preferred)
+- [npm](https://www.npmjs.com) (comes bundled with `node.js`) or [yarn](https://www.yarnpkg.com)
+- [Java SDK](https://adoptopenjdk.net/) (Version 8+, Hotspot)
+
+## Quick Start
+
+In a terminal:
+
+```text
+$ git clone git@github.com:Day8/re-frame-http-fx-2.git
+$ cd re-frame-http-fx-2
+$ npm install
+$ lein run -m shadow.cljs.devtools.cli watch browser-test
+```
+
+Then open these links in different tabs or windows:
+
+* [Tests](http://localhost:8290)
+* [Builds & REPL](http://localhost:9630)
+
