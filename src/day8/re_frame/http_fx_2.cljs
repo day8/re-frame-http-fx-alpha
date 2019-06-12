@@ -274,8 +274,8 @@
 (def request-id->request-and-controller
   "An Atom that contains a mapping of request-ids to requests and their
    associated js/AbortController; i.e.,
-   {:http-123 {::request {:state :waiting :method... }
-               ::controller js/AbortController}}"
+   {:http-123 {::request #:http {:state :waiting :method... }
+               ::js-controller js/AbortController}}"
   (atom {}))
 
 (def fsm
@@ -310,7 +310,7 @@
     (if (valid-to-state? to-state)
       (cond-> current
               (= to-state :cancelled)
-              (assoc-in [request-id ::controller] nil)
+              (assoc-in [request-id ::js-controller] nil)
               :always
               (assoc-in [request-id ::request :http/state] to-state))
       (update-in current [request-id ::request] assoc
@@ -386,8 +386,8 @@
     (swap! request-id->request-and-controller
            #(assoc %1 %2 %3)
            request-id
-           {::request    request'
-            ::controller controller})
+           {::request       request'
+            ::js-controller controller})
     (-> (timeout-race (js/fetch url' (request->js-init request' controller)) timeout)
         (.then (partial response-handler request-id))
         (.catch (partial problem-handler request-id)))

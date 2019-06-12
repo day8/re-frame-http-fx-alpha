@@ -141,25 +141,25 @@
 ;; =============================================================================
 
 (deftest fsm-swap-fn
-  (is (= {:http-xyz {::http-fx-2/request    #:http {:state :problem}
-                     ::http-fx-2/controller {}}}
+  (is (= {:http-xyz {::http-fx-2/request       #:http {:state :problem}
+                     ::http-fx-2/js-controller {}}}
          (http-fx-2/fsm-swap-fn
-           {:http-xyz {::http-fx-2/request    #:http {:state :waiting}
-                       ::http-fx-2/controller {}}}
+           {:http-xyz {::http-fx-2/request       #:http {:state :waiting}
+                       ::http-fx-2/js-controller {}}}
            :http-xyz
            :problem)))
-  (is (= {:http-xyz {::http-fx-2/request    #:http {:state :cancelled}
-                     ::http-fx-2/controller nil}}
+  (is (= {:http-xyz {::http-fx-2/request       #:http {:state :cancelled}
+                     ::http-fx-2/js-controller nil}}
          (http-fx-2/fsm-swap-fn
-           {:http-xyz {::http-fx-2/request    #:http {:state :waiting}
-                       ::http-fx-2/controller {}}}
+           {:http-xyz {::http-fx-2/request       #:http {:state :waiting}
+                       ::http-fx-2/js-controller {}}}
            :http-xyz
            :cancelled)))
-  (is (= {:http-xyz {::http-fx-2/request    #:http {:state :failed
-                                                    :failure :fsm}
-                     ::http-fx-2/controller {}}}
+  (is (= {:http-xyz {::http-fx-2/request       #:http {:state :failed
+                                                       :failure :fsm}
+                     ::http-fx-2/js-controller {}}}
          (http-fx-2/fsm-swap-fn
-           {:http-xyz {::http-fx-2/request    #:http {:state :waiting}
-                       ::http-fx-2/controller {}}}
+           {:http-xyz {::http-fx-2/request       #:http {:state :waiting}
+                       ::http-fx-2/js-controller {}}}
            :http-xyz
            :done))))
