@@ -153,9 +153,9 @@
   [m]
   (let [found (filter sub-effects (keys m))]
     (case (count found)
-      0 ::error-missing-sub-effect
+      0 :failure/missing-sub-effect
       1 (first found)
-      ::error-multiple-sub-effects)))
+      :failure/multiple-sub-effects)))
 
 (defmulti sub-effect sub-effect-dispatch)
 
@@ -246,7 +246,7 @@
 
 ;; Invalid Sub-effects
 ;; =============================================================================
-(defmethod sub-effect ::error-missing-sub-effect
+(defmethod sub-effect :failure/missing-sub-effect
   [m]
   (let [m' (m+profiles m)
         {:http/keys [in-failure]} m'
@@ -257,7 +257,7 @@
       (dispatch (conj in-failure nil nil err))
       (console :error "http fx: no in-failure event handler exists to handle this error: " err))))
 
-(defmethod sub-effect ::error-multiple-sub-effects
+(defmethod sub-effect :failure/multiple-sub-effects
   [m]
   (let [m' (m+profiles m)
         {:http/keys [in-failure]} m'

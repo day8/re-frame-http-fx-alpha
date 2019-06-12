@@ -100,9 +100,39 @@
     (-> (http-fx-2/timeout-race
           (js/Promise.
             (fn [_ reject]
-              (js/setTimeout #(reject :winner) 10)))
-          5)
+              (js/setTimeout #(reject :winner) 32)))
+          16)
         (.catch (fn [value]
                   (is (= :problem/timeout value))
                   (done))))))
 
+;; Effect Dispatch to Sub-effects
+;; =============================================================================
+
+(deftest sub-effect-dispatch-test
+  (is (= :failure/missing-sub-effect
+         (http-fx-2/sub-effect-dispatch {})))
+  (is (= :failure/missing-sub-effect
+         (http-fx-2/sub-effect-dispatch #:http {:bogus ""})))
+  (is (= :failure/multiple-sub-effects
+         (http-fx-2/sub-effect-dispatch #:http {:get "" :head ""})))
+  (is (= :http/get
+         (http-fx-2/sub-effect-dispatch #:http {:get ""})))
+  (is (= :http/head
+         (http-fx-2/sub-effect-dispatch #:http {:head ""})))
+  (is (= :http/options
+         (http-fx-2/sub-effect-dispatch #:http {:options ""})))
+  (is (= :http/post
+         (http-fx-2/sub-effect-dispatch #:http {:post ""})))
+  (is (= :http/put
+         (http-fx-2/sub-effect-dispatch #:http {:put ""})))
+  (is (= :http/delete
+         (http-fx-2/sub-effect-dispatch #:http {:delete ""})))
+  (is (= :http/transition
+         (http-fx-2/sub-effect-dispatch #:http {:transition ""})))
+  (is (= :http/reg-profile
+         (http-fx-2/sub-effect-dispatch #:http {:reg-profile ""})))
+  (is (= :http/unreg-profile
+         (http-fx-2/sub-effect-dispatch #:http {:unreg-profile ""})))
+  (is (= :http/abort
+         (http-fx-2/sub-effect-dispatch #:http {:abort ""}))))
