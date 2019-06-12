@@ -91,8 +91,8 @@
     (-> (http-fx-2/timeout-race
           (js/Promise.
             (fn [_ reject]
-              (js/setTimeout #(reject :winner) 5)))
-          10)
+              (js/setTimeout #(reject :winner) 16)))
+          32)
         (.catch (fn [value]
                   (is (= :winner value))
                   (done)))))
