@@ -12,15 +12,24 @@
   [x]
   (if (sequential? x) x [x]))
 
+(defn ->str
+  "Returns the name String of x if x is a symbol or keyword, otherwise
+   x.toString()."
+  [x]
+  (if (or (symbol? x)
+          (keyword? x))
+    (name x)
+    (str x)))
+
 (defn params->str
   "Returns a URI-encoded string of the params."
   [params]
-  (if (not params)
+  (if (zero? (count params))
     ""
     (let [pairs (reduce-kv
                   (fn [ret k v]
-                    (conj ret (str (js/encodeURIComponent (name k)) "="
-                                   (js/encodeURIComponent (name v)))))
+                    (conj ret (str (js/encodeURIComponent (->str k)) "="
+                                   (js/encodeURIComponent (->str v)))))
                   []
                   params)]
       (str "?" (string/join "&" pairs)))))
@@ -30,9 +39,9 @@
   [headers]
   (reduce-kv
     (fn [js-headers header-name header-value]
-      (.append js-headers
-               (name header-name)
-               (name header-value)))
+      (doto js-headers
+        (.append (->str header-name)
+                 (->str header-value))))
     (js/Headers.)
     headers))
 
@@ -103,12 +112,11 @@
    :http/final-uri?  (.-useFinalURL js-response)
    :http/headers     (js-headers->clj (.-headers js-response))})
 
-(defn js-response->reader
+(defn response->reader
   "Returns a keyword of the type of reader to use for the body of the
-   js/Response JavaScript object according to the Content-Type header."
-  [{:http/keys [content-types]} js-response]
-  (let [content-type (some-> (.headers js-response)
-                             (.get "Content-Type"))]
+   response according to the Content-Type header."
+  [{:http/keys [content-types]} response]
+  (let [content-type (get-in response [:http/headers :content-type] "text/plain")]
     (reduce-kv
       (fn [ret pattern reader]
         (if (or (and (string? pattern) (= content-type pattern))
@@ -128,7 +136,7 @@
            #js [js-promise
                 (js/Promise.
                   (fn [_ reject]
-                    (js/setTimeout #(reject :error/timeout) timeout)))])
+                    (js/setTimeout #(reject :problem/timeout) timeout)))])
     js-promise))
 
 ;; Effect Dispatch to Sub-effects
@@ -331,34 +339,33 @@
 (defn body-handler
   "Dispatches the request with request-id and the associated response with a
    body to the appropriate event handler. Returns nil."
-  [request-id js-response js-body]
-  (let [response (-> (js-response->clj js-response)
-                     (assoc :body js-body))]
-    (if (:ok? response)
-      (fsm->! request-id :processing response)
-      (fsm->! request-id :problem response {:http/problem :server}))))
+  [request-id response js-body]
+  (let [response' (assoc response :body js-body)]
+    (if (:ok? response')
+      (fsm->! request-id :processing response')
+      (fsm->! request-id :problem response' {:http/problem :server}))))
 
 (defn body-failed-handler
   "Dispatches the request with request-id and the associated response to the
    in-failed event handler due to a failure reading the body. Returns nil."
-  [request-id js-response js-error]
-  (let [response (js-response->clj js-response)]
-    (console :error js-error)
-    (fsm->! request-id :failed response {:http/problem :body})))
+  [request-id response js-error]
+  (console :error js-error)
+  (fsm->! request-id :failed response {:http/problem :body}))
 
 (defn response-handler
   "Reads the js/Response JavaScript object stream, that is associated with the
    request with request-id, to completion. Returns nil."
   [request-id js-response]
-  (let [{{request ::request} request-id} @request-id->request-and-controller]
-    (-> (case (js-response->reader request js-response)
+  (let [{{request ::request} request-id} @request-id->request-and-controller
+        response (js-response->clj js-response)]
+    (-> (case (response->reader request response)
           :json         (.json js-response)
           :form-data    (.formData js-response)
           :blob         (.blob js-response)
           :array-buffer (.arrayBuffer js-response)
           :text         (.text js-response))
-        (.then (partial body-handler request-id js-response))
-        (.catch (partial body-failed-handler request-id js-response)))))
+        (.then (partial body-handler request-id response))
+        (.catch (partial body-failed-handler request-id response)))))
 
 (defn problem-handler
   [request-id js-error]
