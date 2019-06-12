@@ -306,7 +306,7 @@
   [current request-id to-state]
   (let [{::keys [request]} (get current request-id)
         {from-state :http/state} request
-        valid-to-state? (get fsm from-state)]
+        valid-to-state? (get fsm from-state #{})]
     (if (valid-to-state? to-state)
       (cond-> current
               (= to-state :cancelled)
@@ -315,7 +315,7 @@
               (assoc-in [request-id ::request :http/state] to-state))
       (update-in current [request-id ::request] assoc
                  :http/state :failed
-                 :http/problem :fsm))))
+                 :http/failure :fsm))))
 
 (defn fsm->!
   "Moves state of request with request-id to-state if it is a valid state
