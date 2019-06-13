@@ -73,7 +73,7 @@ NOTE: If you squint, you might almost see a *_Logical State Handler_* as a kind 
 
 Once you have written the necessary set of `Logical State handlers`, you *_compose them to form a functioning FSM_*. And, because this is a ClojureScript library, this composition happens in a deliciously *_data oriented_* way.
 
-NOTE: Each `Logical State handler` you write has to do the right thing (follow the recipe), and be something of a "good citizen" within the overall composition. If your `Logical State handler` fails to do the right thing, any FSM you compose using it will be, to some extent, dysfunctional. I have every confidence in you.
+Each `Logical State handler` you write has to do the right thing (follow the recipe), and be something of a "good citizen" within the overall composition. If your `Logical State handler` fails to do the right thing, any FSM you compose using it will be, to some extent, dysfunctional. I have every confidence in you.
 
 If your application's needs are sufficiently complicated, this library allows you to create multiple FSM compositions within the one app, each one for a different kind of request. 
 
@@ -97,11 +97,11 @@ An HTTP request is a multistep process which plays out over time. We formalise i
 
 By *_a machine_*, we're referring to the abstract concept of something which *_does something_*. 
 
-A FSM is a *_machine_* which has a set of *_Logical States_* and *_Transitions_* defined between them.  *_Logical States_* are a way to reason about *_where_* a machine is in a process. Each Logical State has discrete responsibilities, concerns and behaviours. 
+With a FSM the *_machine_* has a set of *_Logical States_* and *_Transitions_* defined between them.  *_Logical States_* are a way to reason about *_where_* a machine is within a process. Each Logical State has discrete responsibilities, concerns and behaviours. 
 
-*_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress the time bit - *_events_* trigger Transitions which cause a machine to go from doing one thing, to doing another thing.
+*_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress the time bit - *_events_* trigger Transitions which cause a FSM to go from doing one thing, to doing another thing.
 
-The `Logical State handlers` I talked about previously are expected to implement behaviour for a single Logical State - for one part of the overall "machine". 
+The `Logical State handlers` I talked about above are expected to implement the behaviour of a single Logical State. They are expected to implement the behaviour for one part of the overall "machine". 
 
 The FSM at the core of this library is as follows: 
 
@@ -211,22 +211,22 @@ To aid your understanding of `:http`, let's now pendulum to the opposite extreme
 
 XXX add optional `:http/request-id`  and a  `:http/cancel` event
 
-You can see that there's a lot of flexibility available which is good, 
-but we can also agree that's waaaay too
+While there's a lot of flexibility provided, and that's a good thing, I think we can all 
+agree that's waaaay too
 much to specify each time you make an HTTP request. Particularly because, most of the time, 
-you'll be wanting the same headers, or params and `Logical State handers`. 
+you'll be wanting the same headers, or params and `Logical State handers` each time. 
 
 We need a way to "factor out" the common stuff so we don't have to nominate it 
-every time. That way is "profiles" ... 
+every time. That way is *_profiles_* ... 
 
 
 == Profiles
 
-On program startup, you can "register" one or more `profiles` for later use. 
+On program startup, you can "register" one or more *_profiles_* for later use. 
 
-These profiles capture the common `:http` specification values you want to use in later requests. 
+These profiles capture (or factor out) the common `:http` specification values you want to use in later requests. 
 
-Because the `:http` effect itself is just a data specification, a profile is 
+Because the `:http` effect itself is just data values, a profile is 
 simply a way to factor out "the data values" we want to use in later `:http` 
 effect uses.
 
