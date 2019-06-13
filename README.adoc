@@ -21,7 +21,7 @@ HTTP requests are simple, right?
 
 You send off a request, you get back a response and you store it in `app-db`. Done.
 
-Except, of course, _**requests are anything but simple**_.  There's a happy path, yes, but there's also a deceptively dense thicket of fiddly issues. Coding for unreliable servers and unreliable networks using an async flow of control is hard enough by itself, what with the multiple failure paths and possible retries but, then, there's also the *_cross-cutting issues_* of managing UI updates, user-initiated cancellations, error recovery, logging, statistics gathering, etc. There's a bit going on.
+Except, of course, _**requests are anything but simple**_.  There's a happy path, yes, but there's also a deceptively dense thicket of fiddly issues. Coding for unreliable servers and unreliable networks using an async flow of control is hard enough by itself, what with the multiple failure paths and possible retries but, on top of that, there's also the *_cross-cutting issues_* of managing UI updates, user-initiated cancellations, error recovery, logging, statistics gathering, etc. There's a bit going on.
 
 Many programmers instinctively shy away from the tentacles of this complexity, pragmatically preferring naive but simple solutions. And yet, even accepting that tradeoff, they can find themselves with an uncomfortable amount of repetition and boilerplate.
 
@@ -30,7 +30,7 @@ This library has two goals:
   1. proper treatment for failure paths (robustness and a better user experience)
   2. you write less code for each request (no repetition or fragile boilerplate)
 
-These two goals would normally pull in opposite directions but this library seeks to deliver the best of both worlds. Our creed: have your cake and eat it twice. 
+These two goals would normally pull in opposite directions but this library seeks to deliver the best of both worlds. The promise: have your cake and eat it twice. 
 
 
 == An Indicative Code Fragment 
@@ -47,7 +47,7 @@ These two goals would normally pull in opposite directions but this library seek
 
 That's a re-frame event handler returning an effect keyed `:http`. 
 
-That `:http` effect will initiate a GET to the URL nominated and it will put the response data into `app-db` at the path nominated. The request will be retried on timeouts, and 503 failure, etc. It will log, it will report errors and it can capture interesting statistics. It will also facilitate user-initiated cancellations and show users busy-twirlies and it could process the obtained data from transit to EDN before, then, placing it at the right spots within `app-db`.
+That `:http` effect will initiate a GET to the URL nominated and it will put the response data into `app-db` at the path nominated. The request will be retried on timeouts, and 503 failure, etc. It will log, it will report errors and it can capture interesting statistics. It will also facilitate user-initiated cancellations and show the user a busy-twirly and it could process the response data from transit to EDN before, then, placing it at the right spots within `app-db`.
 
 So with two lines of code - simple ones at that - you'll get a good robust HTTP request process. And you'll soon see that there's no  magic happening to achieve the outcome. You just need to *_compose the right defaults_*.
 
@@ -69,7 +69,7 @@ Each `Logical State handler` provides the implementation (behaviour) for a singl
 
 There's a myriad of ways to implement both of these actions and only you, the application programmer, know how to make it happen correctly for your application.  And that, right there, is the reason the FSM is left incomplete and why you are asked to fill in the blanks. Only you know how certain parts of the FSM should be implemented. 
 
-NOTE: If you squint, you might almost see a *_Logical State Handler_* as a kind of *_callback_*. Almost. Except, as you'll see, the mecahnism is more `dispatch-back`. Or is it more of `logical-state-back`? something-back!  
+NOTE: If you squint, you can see a *_Logical State Handler_* as a kind of *_callback_*. Writing a `Logical State Handler` for the `Failed State` is kinda like suppling an `on-failure` callback. Except, as you'll see, the mecahnism is more `dispatch-back`. 
 
 Once you have written the necessary set of `Logical State handlers`, you *_compose them to form a functioning FSM_*. And, because this is a ClojureScript library, this composition happens in a deliciously *_data oriented_* way.
 
@@ -77,7 +77,7 @@ Each `Logical State handler` you write has to do the right thing (follow the rec
 
 If your application's needs are sufficiently complicated, this library allows you to create multiple FSM compositions within the one app, each one for a different kind of request. 
 
-And, if one of them is used regularly, you can nominate it to be *_the default FSM_*. That two line example shown earlier owes its brevity to (implicitly) by using a `default` FSM composition. 
+And, if one of them is used regularly, you can nominate it to be *_the default FSM_*. That two line example shown earlier owes its brevity to (implicitly) using a `default` FSM composition. 
 
 Finally, to round off the overview, we note that each FSM instance has some working state, which we call `request-state`.  In your `Logical State handlers`, you will likely be pushing/projecting parts of `request-state` through into `app-db`, so that your UI can reflect the state of the request. Again, only you know how you want this done, although many applications will use similar patterns.  For example, you might write a `:retrying?` value of `true` into `app-db` which then causes the UI to render "Sorry about the delay. There was a problem with the network connection, so we're trying again".
 
@@ -111,11 +111,11 @@ image::http://www.plantuml.com/plantuml/png/ZLDFJznE3BtFfx3WykEdheHwGLgj4B0Lwg47
 Notes:
 
 * to use this library, you'll need to understand this FSM
-* the boxes in the diagram represent the FSM's "Logical States"
-* the lines between the boxes are the "transitions"
-* when you write a `state handler` you are implementing the behaviour for one of the boxes
+* the boxes in the diagram represent the FSM's _*Logical States_*
+* the lines between the boxes are the *_Transitions_*
+* when you write a `Logical State Handler` you are implementing the behaviour for one of the boxes
 * the "happy path" is shown in blue  (both boxes and lines)
-* and, yes, there are variations on this model - this one is ours. You could, for example, have teased the "Problem" Logical State out into four distinct states: "Timed Out", "Connection Problem", "Recoverable Server Problem" and "Unrecoverable Server Problem".  We decided to NOT do that because of, well, reasons. My point is that there isn't a "right" model, just one that suits a purpose.
+* and, yes, there are variations on this model - this one is ours. We could, for example, have teased the "Problem" Logical State out into four distinct states: "Timed Out", "Connection Problem", "Recoverable Server Problem" and "Unrecoverable Server Problem".  We decided to NOT do that because of, well, reasons. My point is that there isn't a "right" model, just one that suits a purpose.
 
 XXX Should we have the `Issued state` which allows you to:
 
@@ -132,7 +132,7 @@ XXX There's three kinds of state to talk somewhere:
 
 == Requesting
 
-Here's the terse code we saw earlier:
+Earlier we saw this code: 
 
 [source, Clojure]
 ----
@@ -146,7 +146,7 @@ Here's the terse code we saw earlier:
 
 It uses an effect `:http` to initiate an HTTP GET request. 
 
-To aid your understanding of `:http`, let's now pendulum to the opposite extreme and show you *_the most verbose_* version possible:  
+That code was pretty terse. But now, to aid your understanding of `:http`, let's pendulum to the opposite extreme and show you *_the most verbose_* use of the `:http` effect handler:  
 [source, Clojure]
 ----
 (reg-event-fx
@@ -154,20 +154,13 @@ To aid your understanding of `:http`, let's now pendulum to the opposite extreme
   (fn [_ _]
     {:http  {:http/get        "http://api.something.com/articles/"
 
-             :http/params     {:user     "Fred"
-                               :customer "big one"}
-             :http/headers    {"Authorization"  "Bearer QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
-                               "Cache-Control"  "no-cache"}
-
-             :http/content-type {#"application/.*json" :json
-                                 #"application/edn"    :text}
-
-             ;; Nominate which `Logical State handlers` should be used for this request.
+             ;; Compose the FSM
+             ;; Nominate the `Logical State handlers` to be used for this request.
              ;; Look back at the FSM diagram and at the boxes which represented 
              ;; Logical States. We are nominating what handler will implment the 
              ;; bahaviour in each Logical State (each box of the diagram). 
              ;;
-             ;; When a HTTP request transitions to a new Logical State, it will `dispatch`
+             ;; When the request transitions to a new Logical State, it will `dispatch`
              ;; the event you nominate below, and the associated event handler is expected
              ;; to perform "the behaviour" required in that Logical State.
              :http/in-process    [:my-processor]
@@ -176,12 +169,25 @@ To aid your understanding of `:http`, let's now pendulum to the opposite extreme
              :http/in-cancelled  [:generic-cancelled]
              :http/in-succeeded  [:yah! "fist-pump" :twice]
              :http/in-done       [:so-tired-now]
+             
+             
+             :http/params     {:user     "Fred"
+                               :customer "big one"}
+             :http/headers    {"Authorization"  "Bearer QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+                               "Cache-Control"  "no-cache"}
+
+             ;; XXX describe this 
+             :http/content-type {#"application/.*json" :json
+                                 #"application/edn"    :text}
+
 
              ;; Optional, defaults to (keyword (gensym "http-")) e.g. :http-123
              ;; Useful when you want to 
              :http/id            :my-xyz-request ;; otherwise defaults to (keyword (gensym "http-")) e.g. http-123
 
-             :http/timeout       5000 ;; otherwise no default, request will run as long as browser implementor allows.
+             ;; Timeout
+             ;; optional, by default request will run as long as browser implementation allows
+             :http/timeout       5000 
 
              :http/credentials   "omit" ;; default is 'include'
              :http/redirect      "manual" ;; default is 'follow'
@@ -195,16 +201,15 @@ To aid your understanding of `:http`, let's now pendulum to the opposite extreme
              ;; NOTE: GET or HEAD cannot have body!
              :http/body          String | js/ArrayBuffer | js/Blob | js/FormData | js/BufferSource | js/ReadableStream
 
-
-             ;; Optionally, the path within `app-db` to which request related data should be put
+             ;; Optional: the path within `app-db` to which request related data should be put
              ;; See section in these docs called `path state`  for more details 
              :http/path [:put :response :data :at :this :path :in :app-db]
 
-             ;; Optionally, put into context any application-specific data 
-             ;; for later used within the "state handlers". For example "description"
+             ;; Optional: an area to put application-specific data 
+             ;; If data is supplied here, it will probably be used later within the 
+             ;; implementation of a "state handler". For example "description"
              ;; might be a useful string for displaynig to the users in the UI or
              ;; to put in errors or logs.
-             ;;Later, you'll be able to access it from within the state handlers
              :http/context {:max-retries  5
                             :description  "Loading articles"}}))
 ----
@@ -212,11 +217,11 @@ To aid your understanding of `:http`, let's now pendulum to the opposite extreme
 XXX add optional `:http/request-id`  and a  `:http/cancel` event
 
 While there's a lot of flexibility provided, and that's a good thing, I think we can all 
-agree that's waaaay too
-much to specify each time you make an HTTP request. Particularly because, most of the time, 
-you'll be wanting the same headers, or params and `Logical State handers` each time. 
+agree that's waaaaaay too
+much to specify every time. And, particularly because we'll often want 
+the same headers, or params and `Logical State handers`. 
 
-We need a way to "factor out" the common stuff so we don't have to nominate it 
+We need a way to "factor out" the common stuff so we don't have to repeat it 
 every time. That way is *_profiles_* ... 
 
 
@@ -224,13 +229,14 @@ every time. That way is *_profiles_* ...
 
 On program startup, you can "register" one or more *_profiles_* for later use. 
 
-These profiles capture (or factor out) the common `:http` specification values you want to use in later requests. 
+These profiles capture (or factor out) the common `:http` specification 
+values you want to use in later requests. 
 
 Because the `:http` effect itself is just data values, a profile is 
-simply a way to factor out "the data values" we want to use in later `:http` 
-effect uses.
+simply a way to factor out "the data values" we want to use in later 
+`:http` effect uses.
 
-Like this:
+Do this:
 ```clj
 (reg-event-fx
    :register-my-http-profiles
@@ -245,7 +251,8 @@ Like this:
                 :http/reg-profile   :xyz
       
                 ;; the values associated with this profile
-                :http/values {                              
+                :http/values {   
+                              ;; compose the FSM
                               :http/in-process    [:my-processor]
                               :http/in-problem    [:generic-problem :extra "whatever"]
                               :http/in-failed     [:my-special-failed]
@@ -281,24 +288,25 @@ XXX Isaac are we using `default? true` approach
 You could then use this profile in an `:http` effect like this:
 ```clj
 {:http {:http/get      "http://api.endpoint.com/articles/"
-        :http/profiles [:xyz]               ;;  <-------  Here
-        :http/path     [:put :response :data :at :this :path :in :app-db]}}))
+        :http/path     [:put :response :data :at :this :path :in :app-db]
+        :http/profiles [:xyz]}}     ;;  <----- THIS IS THE NEW
 ```
 
-Notice the use of `:http/profiles` and how it nominates one or more `profile` `ids`:  in this case the profile id `:xyz` which we registered above. 
+For the key `:http/profiles` you nominate one or more `profile` `ids`:  in this case the profile id `:xyz` which we registered above. 
 
 === Multiple Profiles
 
-Notice that more than one profile can be specified:
+More than one profile can be specified:
 ```clj
 {:http {:http/get      "http://api.endpoint.com/articles/"
-        :http/profiles [:first :jwt :xyz]               ;;  <-------  Here
-        :http/path     [:put :response :data :at :this :path :in :app-db]}}
+        :http/path     [:put :response :data :at :this :path :in :app-db]
+        :http/profiles [:first :jwt :xyz]}}     ;;  <---- MULTIPLE
 ```
 
-So that says to combine the three profiles with ids `:first` `:jwt` and `:xyz`, and to then combine that with the `http/get` and `:http/path`. 
+That says to compose the request from three profiles with ids `:first` `:jwt` and `:xyz` (and to 
+further combine that with the explicit`http/get` and `:http/path` provided). 
 
-Now this get interesting. How should combinations be done? 
+You may be wondering. How should this combinations be done? 
 
 == Combining Profiles
 
