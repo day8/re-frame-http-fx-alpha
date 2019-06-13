@@ -30,7 +30,7 @@ This library has two goals:
   1. proper treatment for failure paths (robustness and a better user experience)
   2. you write less code for each request (no repetition or fragile boilerplate)
 
-These two goals would normally pull in opposite directions but this library would like to deliver the best of both worlds. We'd like you to have your cake and eat it twice. 
+These two goals would normally pull in opposite directions but this library seeks to deliver the best of both worlds. Our creed: have your cake and eat it twice. 
 
 
 == An Indicative Code Fragment 
@@ -47,7 +47,7 @@ These two goals would normally pull in opposite directions but this library woul
 
 That's a re-frame event handler returning an effect keyed `:http`. 
 
-That `:http` effect will initiate a GET to the URL nominated and will put the response data into `app-db` at the path nominated. The request will be retried on timeouts, and 503 failure, etc. It will log, it will report errors and it can capture interesting statistics. It will also facilitate user-initiated cancellations and show users busy-twirlies and it could process the obtained data from transit to EDN before, then, placing it at the right spots within `app-db`.
+That `:http` effect will initiate a GET to the URL nominated and it will put the response data into `app-db` at the path nominated. The request will be retried on timeouts, and 503 failure, etc. It will log, it will report errors and it can capture interesting statistics. It will also facilitate user-initiated cancellations and show users busy-twirlies and it could process the obtained data from transit to EDN before, then, placing it at the right spots within `app-db`.
 
 So with two lines of code - simple ones at that - you'll get a good robust HTTP request process. And you'll soon see that there's no  magic happening to achieve the outcome. You just need to *_compose the right defaults_*.
 
@@ -65,11 +65,13 @@ But, yeah, that's the end of the good news. The bad news is that you need to do 
 
 This library leaves parts of the FSM unimplemented and it asks that you fill in these blanks by writing a number of *_Logical State handlers_*. 
 
-Each `Logical State handler` provides the implementation (behaviour) for a single *_Logical State_* in the FSM.  To help you, we provide  "a high-level recipe" each handler, describing what you should do. So, for example, in the `Failed` state, the recipe might stipulate that you "perform error reporting" and "put the application is an acceptable state, despite the failure".  
+Each `Logical State handler` provides the implementation (behaviour) for a single *_Logical State_* in the FSM.  To help you, we provide  "a high-level recipe" each handler, describing what it should do. So, for example, in the `Failed` state, the recipe might stipulate that you "perform error reporting" and "put the application is an acceptable state, despite the failure".  
 
-There's a myriad of ways to implement both of these actions and only you, the application programmer, know how to make it happen correctly for your application.  And that, right there, is the reason the FSM is left incomplete and why you are asked to fill in the blanks. Only you know how certain parts of the FSM should implemented. 
+There's a myriad of ways to implement both of these actions and only you, the application programmer, know how to make it happen correctly for your application.  And that, right there, is the reason the FSM is left incomplete and why you are asked to fill in the blanks. Only you know how certain parts of the FSM should be implemented. 
 
-Once you have written the necessary set of `Logical State handlers`, *_you compose them to form a functioning FSM_*. And, because this is a ClojureScript library, this composition happens in a deliciously *_data oriented_* way.
+NOTE: If you squint, you might almost see a *_Logical State Handler_* as a kind of *_callback_*. Almost. Except, as you'll see, the mecahnism is more `dispatch-back`. Or is it more of `logical-state-back`? something-back!  
+
+Once you have written the necessary set of `Logical State handlers`, you *_compose them to form a functioning FSM_*. And, because this is a ClojureScript library, this composition happens in a deliciously *_data oriented_* way.
 
 NOTE: Each `Logical State handler` you write has to do the right thing (follow the recipe), and be something of a "good citizen" within the overall composition. If your `Logical State handler` fails to do the right thing, any FSM you compose using it will be, to some extent, dysfunctional. I have every confidence in you.
 
