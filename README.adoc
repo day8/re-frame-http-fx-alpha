@@ -4,7 +4,6 @@
 :toc-placement: preamble
 :sectlinks:
 :sectanchors:
-:sectnums:
 :toc:
 :icons: font
 
