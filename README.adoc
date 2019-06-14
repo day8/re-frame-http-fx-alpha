@@ -30,7 +30,7 @@ This library has two goals:
   1. proper treatment for failure paths (robustness and a better user experience)
   2. you write less code for each request (no repetition or fragile boilerplate)
 
-These two goals would normally pull in opposite directions but this library liberates you from the horns of this dilemma, and seeks to let you have your cake and eat it too. In fact, maybe even eat it twice.
+These two goals would normally pull in opposite directions but this library liberates you from the horns of this dilemma, and seeks to let you have your cake and eat it too. In fact, maybe even eat it twice.  But no chocolate sprinkles - we're not monsters.
 
 == An Indicative Code Fragment 
 
@@ -56,7 +56,7 @@ If there is a cost - and let's just acknowledge that there is *_always_* a cost 
 
 I have some good news and some bad news.
 
-This library models an HTTP request using a Finite State Machine (hereafter FSM) - one which captures the various failure paths and retry paths, etc. That leads to a robust and understandable request process. So that's good. 
+This library models an HTTP request using a Finite State Machine (hereafter FSM) - one which captures the various failure paths and retry paths, etc. That leads to a robust and understandable request process. Ah, so obviously we're getting the good news first.  
 
 Also, this library wraps `fetch`, making it central to the FSM, and that means the network-level mechanics of a request are supplied in a browser-modern way. Again, good.
 
@@ -64,11 +64,11 @@ But, yeah, that's the end of the good news. The bad news is that you need to do 
 
 This library leaves parts of the FSM unimplemented and it asks that you fill in these blanks by writing a number of *_Logical State handlers_*. 
 
-Each `Logical State handler` provides the implementation (behaviour) for a single *_Logical State_* in the FSM.  To help you, we provide  "a high-level recipe" each handler, describing what it should do. So, for example, in the `Failed` state, the recipe might stipulate that you "perform error reporting" and "put the application is an acceptable state, despite the failure".  
+Each `Logical State handler` provides the implementation (behaviour) for a single *_Logical State_* in the FSM.  To help you, we provide  "a high-level recipe" each handler, describing what it should do. So, for example, in the `Failed` state, the recipe might stipulate that you "perform error reporting" and "put the application is an acceptable state, despite the failure".
 
 There's a myriad of ways to implement both of these actions and only you, the application programmer, know how to make it happen correctly for your application.  And that, right there, is the reason the FSM is left incomplete and why you are asked to fill in the blanks. Only you know how certain parts of the FSM should be implemented. 
 
-NOTE: If you squint, you can see a *_Logical State Handler_* as a kind of *_callback_*. Writing a `Logical State Handler` for the `Failed State` is kinda like suppling an `on-failure` callback. Except, as you'll see, the mecahnism is more `dispatch-back`. 
+NOTE: With enough squinting and head titling, you can view a *_Logical State Handler_* as a kind of *_callback_*. Writing a `Logical State Handler` for the `Failed State` is kinda like suppling an `on-failure` callback. Sort of. Except, because we're in re-frame land, the mechanism is more `dispatch-back`. More soon.
 
 Once you have written the necessary set of `Logical State handlers`, you *_compose them to form a functioning FSM_*. And, because this is a ClojureScript library, this composition happens in a deliciously *_data oriented_* way.
 
@@ -92,7 +92,9 @@ So, in summary, to use this library:
 
 == The FSM
 
-An HTTP request is a multistep process which plays out over time. We formalise it as a *_a machine_*, specifically a Finite State Machine (FSM). The Internet is full of excellent resources and articles about FSMs, so I'll only provide some hand waving descriptions here before moving on. 
+An HTTP request is a multistep process which plays out over time. 
+
+We formalise it as a *_a machine_*, specifically a Finite State Machine (FSM). The Internet is full of excellent resources and articles about FSMs, so I'll only provide some hand waving descriptions here before moving on. 
 
 By *_a machine_*, we're referring to the abstract concept of something which *_does something_*. 
 
