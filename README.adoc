@@ -21,7 +21,7 @@ HTTP requests are simple, right?
 
 You send off a request, you get back a response and you store it in `app-db`. Done.
 
-Except, of course, _**requests are anything but simple**_.  There's a happy path, yes, but there's also a deceptively dense thicket of fiddly issues. Coding for unreliable servers and unreliable networks using an async flow of control is hard enough by itself, what with the multiple failure paths and possible retries but, on top of that, there's also the *_cross-cutting issues_* of managing UI updates, user-initiated cancellations, error recovery, logging, statistics gathering, etc. There's a bit going on.
+Except, of course, _**requests are anything but simple**_.  There is a happy path, yes, but it winds through a deceptively dense briars thicket of fiddly issues. Coding for unreliable servers and unreliable networks using an async flow of control is hard enough by itself, what with the multiple failure paths and possible retries but, on top of that, there's also the *_cross-cutting issues_* of managing UI updates, user-initiated cancellations, error recovery, logging, statistics gathering, etc. Yeah, there's a bit going on.
 
 Many programmers instinctively shy away from the tentacles of this complexity, pragmatically preferring naive but simple solutions. And yet, even accepting that tradeoff, they can find themselves with an uncomfortable amount of repetition and boilerplate.
 
@@ -30,8 +30,7 @@ This library has two goals:
   1. proper treatment for failure paths (robustness and a better user experience)
   2. you write less code for each request (no repetition or fragile boilerplate)
 
-These two goals would normally pull in opposite directions but this library seeks to deliver the best of both worlds. The promise: have your cake and eat it twice. 
-
+These two goals would normally pull in opposite directions but this library liberates you from the horns of this dilemma, and seeks to let you have your cake and eat it too. In fact, maybe even eat it twice.
 
 == An Indicative Code Fragment 
 
