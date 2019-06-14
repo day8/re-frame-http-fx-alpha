@@ -2,9 +2,10 @@
 
 ## Requirements
 
-- [node.js](https://nodejs.org) (v6.0.0+, most recent version preferred)
-- [npm](https://www.npmjs.com) (comes bundled with `node.js`) or [yarn](https://www.yarnpkg.com)
-- [Java SDK](https://adoptopenjdk.net/) (Version 8+, Hotspot)
+- link:https://nodejs.org[node.js] (v6.0.0+, most recent version preferred)
+- link:https://www.npmjs.com[npm] (comes bundled with `node.js`) or
+  link:https://yarnpkg.com[yarn]
+- link:https://adoptopenjdk.net[Java SDK] (Version 8+, Hotspot)
 
 ## Quick Start
 
@@ -19,6 +20,5 @@ $ lein run -m shadow.cljs.devtools.cli watch browser-test
 
 Then open these links in different tabs or windows:
 
-* [Tests](http://localhost:8290)
-* [Builds & REPL](http://localhost:9630)
-
+* link:http://localhost:8290[Tests]
+* link:http://localhost:9630[Builds & REPL]
