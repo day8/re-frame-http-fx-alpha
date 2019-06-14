@@ -175,25 +175,25 @@
   "An Atom that contains a mapping of profile-ids to profile maps."
   (atom {}))
 
+(defn profile-swap-fn
+  [current {profile-id :http/reg-profile
+            default?   :http/default?
+            :as        profile}]
+  (cond-> current
+          ;; Store default? profile-id as
+          ;; 1) we need to know the 'latest' default; and
+          ;; 2) avoid walking all profiles to find default; and
+          ;; 3) we do not want to overwrite access to earlier default
+          ;;    profile(s) that may still be available via profile-id.
+          default?
+          (assoc ::default-profile-id profile-id)
+
+          :always
+          (assoc profile-id profile)))
+
 (defmethod sub-effect :http/reg-profile
   [profile]
-  (swap! profile-id->profile
-         (fn [current-value
-              {profile-id :http/reg-profile
-               default?   :http/default?
-               :as        profile}]
-           (cond-> current-value
-                   ;; Store default? profile-id as
-                   ;; 1) we need to know the 'latest' default; and
-                   ;; 2) avoid walking all profiles to find default; and
-                   ;; 3) we do not want to overwrite access to earlier default
-                   ;;    profile(s) that may still be available via profile-id.
-                   default?
-                   (assoc ::default-profile-id profile-id)
-
-                   :always
-                   (assoc profile-id profile)))
-         profile))
+  (swap! profile-id->profile profile-swap-fn profile))
 
 (defmethod sub-effect :http/unreg-profile
   [{profile-id :http/unreg-profile}]
