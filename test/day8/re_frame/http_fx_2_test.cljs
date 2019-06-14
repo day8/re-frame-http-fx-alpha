@@ -137,6 +137,39 @@
   (is (= :http/abort
          (http-fx-2/sub-effect-dispatch #:http {:abort ""}))))
 
+;; Profiles
+;; =============================================================================
+
+(deftest conj-profiles-test
+  (is (= #:http {:params     {:sort :desc
+                              :jwt  "eyJhbGc..."}
+                 :headers    {:accept        "application/json"
+                              :authorization "Bearer eyJhbGc..."}
+                 :path       [:a :b :c :d :e]
+                 :in-process [:in-process-a]
+                 :in-problem [:in-problem-a]
+                 :timeout    5000
+                 :profiles   [:xyz :jwt]
+                 :get        "http://api.example.com/articles"}
+         (http-fx-2/conj-profiles
+           #:http {:profiles   [:xyz :jwt]
+                   :get        "http://api.example.com/articles"
+                   :in-process [:in-process-a]
+                   :in-problem [:in-problem-a]
+                   :params     {:sort :desc}
+                   :headers    {:accept "application/json"}
+                   :path       [:a :b :c]}
+           [#:http {:reg-profile :xyz
+                    :values      #:http {:in-problem [:in-problem-b]
+                                         :timeout    5000}}
+            #:http {:reg-profile :jwt
+                    :values      #:http {:params  {:jwt "eyJhbGc..."}
+                                         :headers {:authorization "Bearer eyJhbGc..."}
+                                         :path    [:d :e]}
+                    :combine     #:http {:params  conj
+                                         :headers conj
+                                         :path    into}}]))))
+
 ;; Requests
 ;; =============================================================================
 
