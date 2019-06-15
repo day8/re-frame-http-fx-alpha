@@ -7,6 +7,8 @@
 :toc:
 :icons: font
 
+> This library is under deevelopment. You shouldn't use it, yet.
+
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
 
@@ -119,18 +121,6 @@ Notes:
 * the "happy path" is shown in blue  (both boxes and lines)
 * and, yes, there are variations on this FSM model of a request - this one is ours. We could, for example, have teased the "Problem" Logical State out into four distinct states: "Timed Out", "Connection Problem", "Recoverable Server Problem" and "Unrecoverable Server Problem".  We decided to NOT do that because of, well, reasons. My point is that there isn't a "right" model, just one that suits a purpose.
 
-XXX Should we have the `Issued state` which allows you to:
-
-   - set twirly state?
-   - obtain the id?
-   
-== About State
-
-XXX There's three kinds of state to talk somewhere:
-
-* Logical State (of the FSM) 
-* request-state
-* app-db state at a path
 
 == Requesting
 
@@ -218,21 +208,24 @@ That code was very terse. But now, to enhance your understanding of `:http`, let
 
 XXX add optional `:http/request-id`  and a  `:http/cancel` event
 
-This specification offers a lot of flexibility. But we don't want to repest this 
-much everytime. Particularly because, time after time,
-we'll want the same headers, or params and `Logical State handers`. 
+This specification offers a lot of flexibility. But we clearly don't 
+want to repeat this much everytime. Particularly because, time after time,
+we'll likely want the same headers, or params and `Logical State handers`.
 
 == Profiles
 
-A *_profile_* captures a fragment of an an `:http` specification for later reuse. 
-It is a way of factoring out and capturing commonality.
+A *_profile_* is a fragment of an `:http` specification. It associates an 
+id with a common, reusable piece of specification. 
 
 You can "register" one or more *_profiles_* and you typically do this on application 
-startup. 
+startup.
 
-It is important to realise that an `:http` specification is just data (a map). So, to 
-"capture a fragment" of a specification means simply to capture part of that specification 
-data. And if you think that sounds pretty simple, you'd be right.
+An `:http` specification is just data (a map) which means a fragment is also 
+just data (again, a map). 
+And if you think that sounds pretty simple, you'd be right.
+
+
+== Registering A Profile
 
 This code shows how to register a profile with id `:xyz`, and associate 
 with it certain specification values:
@@ -285,84 +278,97 @@ with it certain specification values:
 ----
 
 XXX Isaac are we using `default? true` approach 
+XXX where do we talk about deault. 
 
-Once you have registered a profile, you can use it within an `:http` effect like this:
-```clj
+== Using A Profile
+
+Here's an example of using that profile we registered above: 
+[source, Clojure]
+----
 {:http {:http/get      "http://api.endpoint.com/articles/"
         :http/path     [:put :response :data :at :this :path :in :app-db]
-        :http/profiles [:xyz]}}     ;;  <----- THIS IS THE NEW
-```
+        :http/profiles :xyz}}     ;;  <----- THIS IS THE NEW
+----
 
-For the key `:http/profiles` you nominate one or more `profile` `ids`:  in this case the profile id `:xyz` which we registered above. 
+That key `:http/profiles` allows you to nominate a previously registered `profile` `id`. The data 
+specification (values) associated with that profile  `id` will be 
+used in the request. 
 
-=== Multiple Profiles
-
-More than one profile can be specified:
-```clj
+Here's another example use, but this time with multiple profile ids (a `vector` of them):
+[source, Clojure]
+----
 {:http {:http/get      "http://api.endpoint.com/articles/"
         :http/path     [:put :response :data :at :this :path :in :app-db]
-        :http/profiles [:first :jwt :xyz]}}     ;;  <---- MULTIPLE
-```
+        :http/profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
+----
 
-That says to compose the request from three profiles with ids `:first` `:jwt` and `:xyz` (and to 
-further combine that with the explicit`http/get` and `:http/path` provided). 
+The data values for all 
+the nominated profiles will be composed to form the final `:http` specification. 
 
-You may be wondering. How should this combinations be done? 
+But how? How are they composed? 
 
-== Combining Profiles
+=== Composing Profiles
 
-Combining Profiles is best understoof by imagining a `reduce` across maps. 
+Each profile represents a map of `:http` values. So, when we have multiple `ids` we will have multiple 
+"maps". So how should multiple maps be "combined" to form a final map, which will act as the 
+`:http` specification?  
 
-Conside this: 
-```clj
+This is best understood by imagining a `reduce` across maps. 
+
+Consider:
+[source, Clojure]
+----
 (reduce merge {}  [map1, map2, map3])
-```
+----
 It will `merge` multiple maps into one. The key/value pairs in the maps will be  
-accumulated, with any values in later maps overwriting the values in earlier ones. 
+accumulated, with any values in "later" maps overwriting the values in earlier ones. 
 
-So that
-```clj
+
+[source, Clojure]
+----
 (def map1 {a: 1})
 (def map2 {b: 2})
 (def map3 {a: 11})
 
 (reduce merge {}  [map1, map2, map3])
-```
+----
 results in `{a: 11  :b 2}`. 
 
-Notice how `:a` has the value `11`, not `1` because the value for `:a` in `map3` overwrites the earlier value in `map1`. 
-
-So, profiles ... 
-
-When you specify multiple profiles, it is useful to imagine that you are asking for 
-a `merge` of all the `:http/values` in the profiles. 
-
-All the 
-
-The next point to note is that 
-Good, now we have the basics:
-
-```clj
-{:http {:http/get      "http://api.endpoint.com/articles/"
-        :http/profiles [:first :jwt :xyz]               ;;  <-------  Here
-        :http/path     [:put :response :data :at :this :path :in :app-db]}}
-```
-
+You'll notice how `:a` has the value `11`, not `1` because the value for `:a` in `map3` overwrites the earlier value in `map1`. 
 
 Next, notice that `merge` is shallow. 
-```clj
+
+[source, Clojure]
+----
 (def map1 {a: {:aa 1})
 (def map2 {b: 2})
 (def map3 {a: {:cc 1})
 
 (reduce merge {}  [map1, map2, map3])
-```
+----
 You might mistakenly think the result should be: 
-results in `{a: {:aa 1 :cc 1}  :b 2}`. 
+`{a: {:aa 1 :cc 1}  :b 2}`. 
 
-But actually it is: 
-results in `{a: {:cc 1}  :b 2}`. 
+But it is actually: `{a: {:cc 1}  :b 2}`. 
 
-The `:a` value of `map3` simply replaces the completely the earlier value. `merge` is shallow. 
+The `:a` value of `map3` simply replaces the **completely** the earlier value. `merge` is shallow. 
+
+
+
+   
+== About State
+
+XXX Should we have the `Issued state` which allows you to:
+
+   - set twirly state?
+   - obtain the id?
+   
+   
+XXX There's three kinds of state to talk somewhere:
+
+* Logical State (of the FSM) 
+* request-state
+* app-db state at a path
+
 
 
