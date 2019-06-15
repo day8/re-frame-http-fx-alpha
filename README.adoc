@@ -7,11 +7,10 @@
 :toc:
 :icons: font
 
-
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
-== Easy and Robust HTTP Requests
 
+== Easy and Robust HTTP Requests
 
 A re-frame library for performing HTTP requests using an effect with key `:http`
 
@@ -102,9 +101,9 @@ By *_a machine_*, I'm referring to the abstract concept of something which *_doe
 
 With a FSM the *_machine_* has a set of *_Logical States_* and *_Transitions_* defined between them.  *_Logical States_* are a way to reason about *_where_* a machine is within an overall process. Each Logical State has discrete responsibilities, concerns and behaviours. 
 
-*_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress the time bit - *_events_* trigger Transitions which cause a FSM to go from doing one thing, to doing another thing.
+*_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress this time bit - events occur whcih trigger Transitions. That means a FSM goes from doing one thing, to doing another thing.
 
-The `Logical State handlers` I talked about above are expected to implement the behaviour of a single Logical State. They are expected to implement the behaviour for one part of the overall "machine". 
+The `Logical State handlers` are about "doing a thing". They are expected to implement the behaviour for a single Logical State. They implement behaviour for one part of "the machine". 
 
 The FSM at the core of this library is as follows: 
 
@@ -149,7 +148,7 @@ Earlier we saw this code:
 
 It uses an effect `:http` to initiate an HTTP GET request. 
 
-That code was pretty terse. But now, to aid your understanding of `:http`, let's pendulum to the opposite extreme and show you *_the most verbose_* use of the `:http` effect handler:  
+That code was very terse. But now, to enhance your understanding of `:http`, let's pendulum to the opposite extreme and show you *_the most verbose_* use of the `:http` effect handler:  
 [source, Clojure]
 ----
 (reg-event-fx
@@ -219,28 +218,26 @@ That code was pretty terse. But now, to aid your understanding of `:http`, let's
 
 XXX add optional `:http/request-id`  and a  `:http/cancel` event
 
-While there's a lot of flexibility provided, and that's a good thing, I think we can all 
-agree that's waaaaaay too
-much to specify every time. And, particularly because we'll often want 
-the same headers, or params and `Logical State handers`. 
-
-We need a way to "factor out" the common stuff so we don't have to repeat it 
-every time. That way is *_profiles_* ... 
-
+This specification offers a lot of flexibility. But we don't want to repest this 
+much everytime. Particularly because, time after time,
+we'll want the same headers, or params and `Logical State handers`. 
 
 == Profiles
 
-On program startup, you can "register" one or more *_profiles_* for later use. 
+A *_profile_* captures a fragment of an an `:http` specification for later reuse. 
+It is a way of factoring out and capturing commonality.
 
-These profiles capture (or factor out) the common `:http` specification 
-values you want to use in later requests. 
+You can "register" one or more *_profiles_* and you typically do this on application 
+startup. 
 
-Because the `:http` effect itself is just data values, a profile is 
-simply a way to factor out "the data values" we want to use in later 
-`:http` effect uses.
+It is important to realise that an `:http` specification is just data (a map). So, to 
+"capture a fragment" of a specification means simply to capture part of that specification 
+data. And if you think that sounds pretty simple, you'd be right.
 
-Do this:
-```clj
+This code shows how to register a profile with id `:xyz`, and associate 
+with it certain specification values:
+[source, Clojure]
+----
 (reg-event-fx
    :register-my-http-profiles
    (fn [_ _]
@@ -253,7 +250,7 @@ Do this:
                 
                 :http/reg-profile   :xyz
       
-                ;; the values associated with this profile
+                ;; the values we are capturing and associating with this profile 
                 :http/values {   
                               ;; compose the FSM
                               :http/in-process    [:my-processor]
@@ -285,10 +282,11 @@ Do this:
                 ;; 
                 :http/combine   {:http/params   merge
                                  :http/get      str }}}))               
-```
+----
+
 XXX Isaac are we using `default? true` approach 
 
-You could then use this profile in an `:http` effect like this:
+Once you have registered a profile, you can use it within an `:http` effect like this:
 ```clj
 {:http {:http/get      "http://api.endpoint.com/articles/"
         :http/path     [:put :response :data :at :this :path :in :app-db]
