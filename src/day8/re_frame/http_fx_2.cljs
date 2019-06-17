@@ -317,6 +317,8 @@
                  :http/state :failed
                  :http/failure :fsm))))
 
+;; TODO handle undefined event handler(s); default event handlers
+
 (defn fsm->!
   "Moves state of request with request-id to-state if it is a valid state
    transition, otherwise to :failed. Dispatches to the appropriate event handler.
@@ -331,25 +333,27 @@
          (swap-vals! request-id->request-and-controller
                      fsm-swap-fn request-id to-state)
          event-key (get fsm->event-keys state)
-         event (conj (get request event-key) request response error)]
+         event (or (get request event-key) [:http/no-handler])
+         event' (conj event request response error)]
      (when (= :cancelled state)
        (.abort js-controller))
-     (dispatch event))))
+     (dispatch event'))))
 
 (defn body-handler
   "Dispatches the request with request-id and the associated response with a
    body to the appropriate event handler. Returns nil."
-  [request-id response js-body]
-  (let [response' (assoc response :body js-body)]
-    (if (:ok? response')
+  [request-id response reader js-body]
+  (let [body (if (= :json reader) (js->clj js-body :keywordize-keys true) js-body)
+        response' (assoc response :body body)]
+    (if (:http/ok? response')
       (fsm->! request-id :processing response')
       (fsm->! request-id :problem response' {:http/problem :server}))))
 
 (defn body-failed-handler
   "Dispatches the request with request-id and the associated response to the
    in-failed event handler due to a failure reading the body. Returns nil."
-  [request-id response js-error]
-  (console :error js-error)
+  [request-id response reader js-error]
+  ;(console :error js-error)
   (fsm->! request-id :failed response {:http/problem :body}))
 
 (defn response-handler
@@ -357,19 +361,20 @@
    request with request-id, to completion. Returns nil."
   [request-id js-response]
   (let [{{request ::request} request-id} @request-id->request-and-controller
-        response (js-response->clj js-response)]
-    (-> (case (response->reader request response)
+        response (js-response->clj js-response)
+        reader (response->reader request response)]
+    (-> (case reader
           :json         (.json js-response)
           :form-data    (.formData js-response)
           :blob         (.blob js-response)
           :array-buffer (.arrayBuffer js-response)
           :text         (.text js-response))
-        (.then (partial body-handler request-id response))
-        (.catch (partial body-failed-handler request-id response)))))
+        (.then (partial body-handler request-id response reader))
+        (.catch (partial body-failed-handler request-id response reader)))))
 
 (defn problem-handler
   [request-id js-error]
-  (console :error js-error)
+  ;;(console :error js-error)
   (fsm->! request-id :problem nil {:http/problem js-error}))
 
 (defn fetch
@@ -380,7 +385,7 @@
         request' (-> request
                      (merge #:http {:request-id request-id
                                     :url        url'
-                                    :state      :waiting})
+                                    :state      :requested})
                      (m+profiles))
         controller (js/AbortController.)]
     (swap! request-id->request-and-controller
@@ -388,6 +393,7 @@
            request-id
            {::request       request'
             ::js-controller controller})
+    (fsm->! request-id :waiting)
     (-> (timeout-race (js/fetch url' (request->js-init request' controller)) timeout)
         (.then (partial response-handler request-id))
         (.catch (partial problem-handler request-id)))
