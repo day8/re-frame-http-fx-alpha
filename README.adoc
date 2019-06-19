@@ -22,7 +22,7 @@ HTTP requests are simple, right?
 
 You send off a request, you get back a response and you store it in `app-db`. Done.
 
-Except, of course, _**requests are anything but simple**_.  There is a happy path, yes, but it winds through a deceptively dense briars thicket of fiddly issues. Coding for unreliable servers and unreliable networks using an async flow of control is hard enough by itself, what with the multiple failure paths and possible retries but, on top of that, there's also the *_cross-cutting issues_* of managing UI updates, user-initiated cancellations, error recovery, logging, statistics gathering, etc. Yeah, there's a bit going on.
+Except, of course, _**requests are anything but simple**_.  There is a happy path, yes, but it winds through a deceptively dense briar thicket of fiddly issues. Coding for unreliable servers and unreliable networks using an async flow of control is hard enough by itself, what with the multiple failure paths and possible retries but, on top of that, there's also the *_cross-cutting issues_* of managing UI updates, user-initiated cancellations, error recovery, logging, statistics gathering, etc. Yeah, there's a bit going on.
 
 Many programmers instinctively shy away from the tentacles of this complexity, pragmatically preferring naive but simple solutions. And yet, even accepting that tradeoff, they can find themselves with an uncomfortable amount of repetition and boilerplate.
 
@@ -35,6 +35,8 @@ These two goals would normally pull in opposite directions but this library libe
 
 == An Indicative Code Fragment 
 
+Here's a re-frame event handler returning an effect keyed `:http`. 
+
 [source, Clojure]
 ----
 (ref-event-fx 
@@ -45,23 +47,22 @@ These two goals would normally pull in opposite directions but this library libe
             :http/path [:put :response :data :at :this :path :in :app-db]}}))
 ----
 
-That's a re-frame event handler returning an effect keyed `:http`. 
 
 That `:http` effect will initiate a GET to the URL nominated and it will put the response data into `app-db` at the path nominated. The request will be retried on timeouts, and 503 failure, etc. It will log, it will report errors and it can capture interesting statistics. It will also facilitate user-initiated cancellations and show the user a busy-twirly and it could process the response data from transit to EDN before, then, placing it at the right spots within `app-db`.
 
 So with two lines of code - simple ones at that - you'll get a good robust HTTP request process. And you'll soon see that there's no  magic happening to achieve the outcome. You just need to *_compose the right defaults_*.
 
-If there is a cost - and let's just acknowledge that there is *_always_* a cost for abstraction - it is that you'll need to do some upfront learning, and then "code your defaults". Let's start that upfront learning process now ...
+If there is a cost - and there is *_always_* a cost for abstraction - it is that you'll need to do some upfront learning, and need to "code your defaults". Let's start that upfront learning process now ...
 
-== Composing An Ensemble Of State Handlers
+== An Overview
 
 I have some good news and some bad news. Good news first.
 
-This library models an HTTP request using a Finite State Machine (hereafter FSM) - one which captures the various failure paths and retry paths, etc. That leads to a robust and understandable request process. 
+This library models an HTTP request using a Finite State Machine (hereafter FSM) - one which captures the various failure paths and retry paths, etc. And that leads to a robust and understandable request process. 
 
 Also, this library wraps `fetch`, making it central to the FSM, and that means the network-level mechanics of a request are supplied in a browser-modern way.
 
-The bad news: you need to do the rest of the work.
+That's the end of the good news which is itself the bad news - you need to do the rest of the work.
 
 This library leaves parts of the FSM unimplemented and it asks that you fill in these blanks by writing a number of *_Logical State handlers_*. 
 
