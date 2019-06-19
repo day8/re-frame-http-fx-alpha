@@ -62,7 +62,7 @@ This library models an HTTP request using a Finite State Machine (hereafter FSM)
 
 Also, this library wraps `fetch`, making it central to the FSM, and that means the network-level mechanics of a request are supplied in a browser-modern way.
 
-That's the end of the good news which is itself the bad news - you need to do the rest of the work.
+That's the end of the good news which is itself the bad news - because you need to do the rest of the work.
 
 This library leaves parts of the FSM unimplemented and it asks that you fill in these blanks by writing a number of *_Logical State handlers_*. 
 
@@ -106,7 +106,7 @@ With a FSM the *_machine_* has a set of *_Logical States_* and *_Transitions_* d
 
 *_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress this time bit - events occur which trigger Transitions. That means a FSM goes from doing one thing, to doing another thing.
 
-The `Logical State handlers` are about "doing a thing". They are expected to implement the behaviour for a single Logical State. They implement behaviour for one part of "the machine". 
+The `Logical State handlers` you write are about "doing a thing". They implement behaviour for one part of "the machine". 
 
 The FSM at the core of this library is as follows: 
 
