@@ -7,7 +7,7 @@
 :toc:
 :icons: font
 
-> This library is under deevelopment. You shouldn't use it, yet.
+> This library is under development. You shouldn't use it, yet.
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
@@ -69,7 +69,7 @@ Each `Logical State handler` provides the behaviour for a single *_Logical State
 
 Of course, there's a myriad of ways to implement both of these tasks and only you, the application programmer, know how to make it happen correctly for your application.  And that's exactly why the FSM is left incomplete and why you are asked to fill in the blanks.
 
-NOTE: With a bit of squinting and head titling, you can see a *_Logical State Handler_* as something of a *_callback_*. For example, writing a `Logical State Handler` for the `Failed State` is very similar to suppling an `on-failure` callback. As, we'll soon see, there is slightly more going on, but that's a pretty good first approaximation. And, of course, because we're in re-frame land, the mechanism will be more `dispatch-back` than `callback`.
+NOTE: With a bit of squinting and head tilting, you can see a *_Logical State Handler_* as something of a *_callback_*. For example, writing a `Logical State Handler` for the `Failed State` is very similar to supplying an `on-failure` callback. As we'll soon see, there is slightly more going on, but that's a pretty good first approximation. And, of course, because we're in re-frame land, the mechanism will be more `dispatch-back` than `callback`.
 
 Each `Logical State handler` you write has to do the right thing (follow the task recipe), and be something of a "good citizen" within the overall composition. If your `Logical State handler` fails to do the right thing, any FSM you compose using it will be, to some extent, dysfunctional. I have every confidence in you.
 
@@ -85,7 +85,7 @@ be responsible for pushing/projecting parts of `request-state` through into `app
 So, here's the plan: 
 
 * you should get to know the FSM topology it proposes (next section)
-* you will implement the blank parts of the FSM but writing a set of `Logical State handlers`, following the reciepy for each.
+* you will implement the blank parts of the FSM but writing a set of `Logical State handlers`, following the recipe for each.
 * you will compose an ensemble of these `Logical State handlers` to form a FSM
 * your FSM will maintain/manage `request-state`
 * your FSM will likely push/project aspects of `request-state` into `app-db` 
@@ -103,7 +103,7 @@ By *_a machine_*, I'm referring to the abstract concept of something which *_doe
 
 With a FSM the *_machine_* has a set of *_Logical States_* and *_Transitions_* defined between them.  *_Logical States_* are a way to reason about *_where_* a machine is within an overall process. Each Logical State has discrete responsibilities, concerns and behaviours. 
 
-*_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress this time bit - events occur whcih trigger Transitions. That means a FSM goes from doing one thing, to doing another thing.
+*_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress this time bit - events occur which trigger Transitions. That means a FSM goes from doing one thing, to doing another thing.
 
 The `Logical State handlers` are about "doing a thing". They are expected to implement the behaviour for a single Logical State. They implement behaviour for one part of "the machine". 
 
@@ -149,8 +149,8 @@ That code was very terse. But now, to enhance your understanding of `:http`, let
              ;; Compose the FSM
              ;; Nominate the `Logical State handlers` to be used for this request.
              ;; Look back at the FSM diagram and at the boxes which represented 
-             ;; Logical States. We are nominating what handler will implment the 
-             ;; bahaviour in each Logical State (each box of the diagram). 
+             ;; Logical States. We are nominating what handler will implement the 
+             ;; behaviour in each Logical State (each box of the diagram). 
              ;;
              ;; When the request transitions to a new Logical State, it will `dispatch`
              ;; the event you nominate below, and the associated event handler is expected
@@ -200,7 +200,7 @@ That code was very terse. But now, to enhance your understanding of `:http`, let
              ;; Optional: an area to put application-specific data 
              ;; If data is supplied here, it will probably be used later within the 
              ;; implementation of a "state handler". For example "description"
-             ;; might be a useful string for displaynig to the users in the UI or
+             ;; might be a useful string for displaying to the users in the UI or
              ;; to put in errors or logs.
              :http/context {:max-retries  5
                             :description  "Loading articles"}}))
@@ -209,7 +209,7 @@ That code was very terse. But now, to enhance your understanding of `:http`, let
 XXX add optional `:http/request-id`  and a  `:http/cancel` event
 
 This specification offers a lot of flexibility. But we clearly don't 
-want to repeat this much everytime. Particularly because, time after time,
+want to repeat this much every time. Particularly because, time after time,
 we'll likely want the same headers, or params and `Logical State handers`.
 
 == Profiles
@@ -257,28 +257,28 @@ with it certain specification values:
                               :http/context  {:max-retries 2}}
                                      
                 ;; Optional, advanced feature.
-                ;; Profiles thmselves can be combined/composed.
+                ;; Profiles themselves can be combined/composed.
                 ;; In this section, you can specify how the `:http/values` in this 
                 ;; profile should be combined with the values in other profile. 
                 ;; For each key in `:http/values` provide you can provide a two argument 
-                ;; fucntion to do the combining. 
+                ;; function to do the combining. 
                 ;; The two arguments given to this function will be:
                 ;;    (1) the value in "other" profile 
                 ;;    (2) the value in this profile
                 ;; 
                 ;; Example combining functions:
                 ;;    - `merge` would be useful if combining maps
-                ;;    - `conj` would useful for combining vectors
+                ;;    - `conj` would be useful for combining vectors
                 ;;    - `str` would be useful for combining strings (URI?)
                 ;;    - `#(identity %2)` would cause the value in this profile
-                ;;      overwirte the value in the other profile. 
+                ;;      overwrite the value in the other profile. 
                 ;; 
                 :http/combine   {:http/params   merge
                                  :http/get      str }}}))               
 ----
 
 XXX Isaac are we using `default? true` approach 
-XXX where do we talk about deault. 
+XXX where do we talk about default. 
 
 == Using A Profile
 
@@ -369,6 +369,7 @@ XXX There's three kinds of state to talk somewhere:
 * Logical State (of the FSM) 
 * request-state
 * app-db state at a path
+
 
 
 
