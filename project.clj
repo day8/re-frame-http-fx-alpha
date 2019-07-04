@@ -5,7 +5,7 @@
   :dependencies [[thheller/shadow-cljs       "2.8.39"]
                  [org.clojure/clojure        "1.10.1"]
                  [org.clojure/clojurescript  "1.10.520"]
-                 [re-frame                   "0.10.6"]]
+                 [re-frame                   "0.10.7"]]
 
   :profiles {:dev   {:dependencies [[binaryage/devtools "0.9.10"]
                                     [karma-reporter     "3.1.0"]]}}
