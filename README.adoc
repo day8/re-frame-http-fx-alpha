@@ -388,18 +388,18 @@ combining process for each potential key in `.
 
 == About State
 
-There's three kinds of state: 
+Three kinds:
 
-* The Logical State (of the FSM). This is just a single value which says what state we 
-  are in within the FSM which, in turn, controls what "the machine" is currently 
-  doing (ie. what `Logical State Handler` is executing). 
-* `request-state` is all the detail which this library maintains about a request, including 
+* The Logical State.. A single value which captures the logical state of the FSM
+  which , in turn, controls what "the machine" is currently doing (ie. what *_Logical State Handler_* is executing). 
+* `request-state` is all the detail which this library maintains about a request when it is being performed, including 
    an id, the original request, number of retries, the trace history through the FSM, etc.  This state exists only for the time the 
-* `presentation-state` - a "projection" of `request-state` which is stored in `app-db`, at some path. Two parts: it tracks those aspects of the request which need to be reflected in the UI.  So, for example, there might need to be a `:loading?` value set to true to indicate that the busy twirly is kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the `reguest-state` so that, again, the UI can show the user what is happening.  
+* `presentation-state` - a "projection" of `request-state` which is stored across in `app-db`, at the nominated path. It is a mirrors 
+   of those aspects of the `request-state` which are need to present a UI. So, for example, there might need to be a `:loading?` value      set to true to indicate that the busy twirly should be kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the    `reguest-state` so that, again, the UI can show the user what is happening.  
 
-The `request-state` disappears after the request happens. But the `XXX-state` persists. Ultimately, the most important part of this `presentation-state` is the response data itself. But there will be other information alongside it. 
+The `request-state` disappears when the request finishes. But the `presentation-state` persists. Ultimately, the most important part of this `presentation-state` is the response data itself. But there will be other information alongside it. For this reason, `presentation-state` is normally a map of values with a key for `response`, but it has other values.
 
-The `presentation-state` is put at the path nominated within `app-db`.
+The `presentation-state` (a map) is put at the path nominated within `app-db`.
 
 The `presentation-state` is managed by your `Logical State Handlers`. You control what data is projected from the `request-state` across into the `presentation-state`. Because you, the application programmer, knows what you want to set within `app-db`. You know how you want the UI to render the state of the request process.
 
@@ -409,17 +409,11 @@ For example:
   - it is then the job of the `in-teardown` handler to set the `:loading?` flag back to `false`
     (thus taking down the twirly). 
     
+    
+== Recipies 
 
 
-
-
-XXX we recomend that the path does not contain just request's response. Indeat it contains 
-
-Logical State  is the easy one to talk about. 
-
-  
-But this data is not stored in `app-db`. 
-
+XXX the receipies for each of the Logical State Handlers ... 
 
    
 
