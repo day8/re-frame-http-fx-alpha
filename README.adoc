@@ -104,9 +104,9 @@ By *_a machine_*, I'm referring to the abstract concept of something which *_doe
 
 With a FSM the *_machine_* has a set of *_Logical States_* and *_Transitions_* defined between them.  *_Logical States_* are a way to reason about *_where_* a machine is within an overall process. Each Logical State has discrete responsibilities, concerns and behaviours. 
 
-*_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress this time bit - events occur which trigger Transitions. That means a FSM goes from doing one thing, to doing another thing.
+*_Transitions_* cause a FSM to move from one Logical State to another - from one behaviour to another. Over time - and I really would like to stress this time bit - events occur which *_trigger_* Transitions. That means a FSM goes from doing one thing, to doing another thing.
 
-The `Logical State Handlers` you write are about "doing a thing" when in a particular state. And, so, yhey implement behaviour for one part of "the machine". 
+The `Logical State Handlers` you write are about "doing a thing" when in a particular state. And, so, they implement behaviour for one part of "the machine". 
 
 The FSM at the core of this library is as follows: 
 
@@ -116,9 +116,9 @@ image::http://www.plantuml.com/plantuml/png/ZLDDJnjD3BxFhx32vULLKL4lI564W4YeXnvG
 Notes:
 
 * to use this library, you'll need to understand this FSM
-* the boxes in the diagram represent the FSM's _*Logical States_*
-* the lines between the boxes are the *_Transitions_*
-* the names on those lines are the *_Triggers_*
+* the boxes in the diagram represent the FSM's *_Logical States_*
+* the lines between the boxes are the allowed changes between *_Logical States_*, known as *_Transitions_*
+* the names on those lines are the *_Triggers_* (the event which causes the Transistion to happen)
 * when you write a `Logical State Handler` you are implementing the behaviour for one of the boxes
 * the "happy path" is shown in blue  (both boxes and lines)
 * and, yes, there are variations on this FSM model of a request - this one is ours. We could, for example, have teased the "Problem" Logical State out into four distinct states: "Timed Out", "Connection Problem", "Recoverable Server Problem" and "Unrecoverable Server Problem".  We decided to NOT do that because of, well, reasons. My point is that there isn't a "right" model, just one that suits a purpose.
@@ -258,8 +258,112 @@ with it certain specification values:
                               
                               :http/timeout       3000
                               
-                              :http/context  {:max-retries 2}}
-                                     
+                              :http/context  {:max-retries 2}}}}))               
+----
+
+XXX Isaac are we using `default? true` approach?
+XXX where do we talk about default. 
+
+== Using A Profile
+
+Here's an example of using that profile we registered above: 
+[source, Clojure]
+----
+{:http {:http/get      "http://api.endpoint.com/articles/"
+        :http/path     [:put :response :data :at :this :path :in :app-db]
+        :http/profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE 
+----
+
+That key `:http/profiles` allows you to nominate a vector of previously registered `profile` `ids`. The data 
+(`:http/values`) associated with those profile  `ids` will be added in the request. 
+
+Here's another example use, but this time with multiple profile ids (a `vector` of them):
+[source, Clojure]
+----
+{:http {:http/get      "http://api.endpoint.com/articles/"
+        :http/path     [:put :response :data :at :this :path :in :app-db]
+        :http/profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
+----
+
+The data in the `:http/values` for the nominated profiles will be composed to form the 
+final `:http` specification. 
+
+But how? 
+
+=== Composing Profiles
+
+When each profile holds a `:http/values` map and we must combine multiple of them, how should 
+we "combine" the many into one map to be our `:http` specification?  
+
+The answer is to imagine a `reduce` across a seq of maps, using `merge`. 
+
+Consider:
+[source, Clojure]
+----
+(reduce merge {}  [map1, map2, map3])
+----
+`merge` accumulates the key/value pairs,   
+with any values in "later" maps overwriting the values in "earlier" ones. 
+
+Concrete example:
+[source, Clojure]
+----
+(def map1 {a: 1})
+(def map2 {b: 2})
+(def map3 {a: 11})
+
+(reduce merge {}  [map1, map2, map3])
+----
+the result is `{a: 11  :b 2}`. 
+
+You'll notice how `:a` has the value `11`, not `1` because the value for `:a` in `map3` overwrites the earlier value in `map1`. 
+
+Remember that `merge` is shallow. Consider:
+[source, Clojure]
+----
+(def map1 {a: {:aa 1})
+(def map2 {a: {:cc 1})
+
+(reduce merge {}  [map1, map2])
+----
+You might be tempted to thing the result should be: 
+`{a: {:aa 1 :cc 1}}`. 
+
+But it is actually: `{a: {:cc 1}}`. 
+
+The `:a` value of `map2` which is `{:cc 1}` simply replaces **completely** the earlier value of `{:aa 1}`. The maps `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recusively on the values themselves.
+
+== Beyond Default `merge` Behaviour
+
+This default `merge` behaviour is often good enough, particularly when the profiles being combined don't overlapping
+keys. 
+
+But, sometimes, when profiles have overlapping keys it is useful to take control about how the `values` 
+are combined. 
+
+Sometimes this default `merge` behaviour is not enough and this library lets you take change of the 
+combining process for each potential key in `.
+
+[source, Clojure]
+----
+(reg-event-fx
+   :register-my-http-profile
+   (fn [_ _]
+      {:http   {:http/reg-profile   :xyz
+      
+                ;; the values we are capturing and associating with this profile 
+                :http/values {   
+                              ;; compose the FSM
+                              :http/in-process    [:my-processor]
+                              :http/in-problem    [:generic-problem :extra "whatever"]
+                              :http/in-failed     [:my-special-failed]
+                              :http/in-cancelled  [:generic-cancelled]
+                              :http/in-done       [:generic-done]
+                              
+                              :http/timeout       3000
+                              
+                              :http/context  {:max-retries 2}}}}))               
+                
                 ;; Optional, advanced feature.
                 ;; Profiles themselves can be combined/composed.
                 ;; In this section, you can specify how the `:http/values` in this 
@@ -278,88 +382,11 @@ with it certain specification values:
                 ;;      overwrite the value in the other profile. 
                 ;; 
                 :http/combine   {:http/params   merge
-                                 :http/get      str }}}))               
+                                 :http/get      str }}}))
+
 ----
 
-XXX Isaac are we using `default? true` approach 
-XXX where do we talk about default. 
 
-== Using A Profile
-
-Here's an example of using that profile we registered above: 
-[source, Clojure]
-----
-{:http {:http/get      "http://api.endpoint.com/articles/"
-        :http/path     [:put :response :data :at :this :path :in :app-db]
-        :http/profiles :xyz}}     ;;  <----- THIS IS THE NEW
-----
-
-That key `:http/profiles` allows you to nominate a previously registered `profile` `id`. The data 
-specification (values) associated with that profile  `id` will be 
-used in the request. 
-
-Here's another example use, but this time with multiple profile ids (a `vector` of them):
-[source, Clojure]
-----
-{:http {:http/get      "http://api.endpoint.com/articles/"
-        :http/path     [:put :response :data :at :this :path :in :app-db]
-        :http/profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
-----
-
-The data values for all 
-the nominated profiles will be composed to form the final `:http` specification. 
-
-But how? How are they composed? 
-
-=== Composing Profiles
-
-Each profile represents a map of `:http` values. So, when we have multiple `ids` we will have multiple 
-"maps". So how should multiple maps be "combined" to form a final map, which will act as the 
-`:http` specification?  
-
-This is best understood by imagining a `reduce` across maps. 
-
-Consider:
-[source, Clojure]
-----
-(reduce merge {}  [map1, map2, map3])
-----
-It will `merge` multiple maps into one. The key/value pairs in the maps will be  
-accumulated, with any values in "later" maps overwriting the values in earlier ones. 
-
-
-[source, Clojure]
-----
-(def map1 {a: 1})
-(def map2 {b: 2})
-(def map3 {a: 11})
-
-(reduce merge {}  [map1, map2, map3])
-----
-results in `{a: 11  :b 2}`. 
-
-You'll notice how `:a` has the value `11`, not `1` because the value for `:a` in `map3` overwrites the earlier value in `map1`. 
-
-Next, notice that `merge` is shallow. 
-
-[source, Clojure]
-----
-(def map1 {a: {:aa 1})
-(def map2 {b: 2})
-(def map3 {a: {:cc 1})
-
-(reduce merge {}  [map1, map2, map3])
-----
-You might mistakenly think the result should be: 
-`{a: {:aa 1 :cc 1}  :b 2}`. 
-
-But it is actually: `{a: {:cc 1}  :b 2}`. 
-
-The `:a` value of `map3` simply replaces the **completely** the earlier value. `merge` is shallow. 
-
-
-
-   
 == About State
 
 XXX Should we have the `Issued state` which allows you to:
@@ -373,7 +400,5 @@ XXX There's three kinds of state to talk somewhere:
 * Logical State (of the FSM) 
 * request-state
 * app-db state at a path
-
-
 
 
