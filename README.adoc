@@ -7,7 +7,7 @@
 :toc:
 :icons: font
 
-> This library is under development. You shouldn't use it, yet.
+> This library is under development. Best not to read this yet, unless you want to provide ideas/critique. 
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
@@ -386,19 +386,42 @@ combining process for each potential key in `.
 
 ----
 
-
 == About State
 
-XXX Should we have the `Issued state` which allows you to:
+There's three kinds of state: 
 
-   - set twirly state?
-   - obtain the id?
-   
-   
-XXX There's three kinds of state to talk somewhere:
+* The Logical State (of the FSM). This is just a single value which says what state we 
+  are in within the FSM which, in turn, controls what "the machine" is currently 
+  doing (ie. what `Logical State Handler` is executing). 
+* `request-state` is all the detail which this library maintains about a request, including 
+   an id, the original request, number of retries, the trace history through the FSM, etc.  This state exists only for the time the 
+* `presentation-state` - a "projection" of `request-state` which is stored in `app-db`, at some path. Two parts: it tracks those aspects of the request which need to be reflected in the UI.  So, for example, there might need to be a `:loading?` value set to true to indicate that the busy twirly is kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the `reguest-state` so that, again, the UI can show the user what is happening.  
 
-* Logical State (of the FSM) 
-* request-state
-* app-db state at a path
+The `request-state` disappears after the request happens. But the `XXX-state` persists. Ultimately, the most important part of this `presentation-state` is the response data itself. But there will be other information alongside it. 
+
+The `presentation-state` is put at the path nominated within `app-db`.
+
+The `presentation-state` is managed by your `Logical State Handlers`. You control what data is projected from the `request-state` across into the `presentation-state`. Because you, the application programmer, knows what you want to set within `app-db`. You know how you want the UI to render the state of the request process.
+
+For example:
+  - it is the job of the `in-setup` to initially create the  `XXX-state` assumed to be a map. 
+    And it might initially establish within this map a `:loading?` flag as `true`. 
+  - it is then the job of the `in-teardown` handler to set the `:loading?` flag back to `false`
+    (thus taking down the twirly). 
+    
+
+
+
+
+XXX we recomend that the path does not contain just request's response. Indeat it contains 
+
+Logical State  is the easy one to talk about. 
+
+  
+But this data is not stored in `app-db`. 
+
+
+   
+
 
 
