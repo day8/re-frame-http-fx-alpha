@@ -470,47 +470,55 @@ For example:
 Receipies for each of the Logical State Handlers ... 
 
 in-setup:
-  - establish the app-state at the nominated path 
-  - optionally, obtain the id of the request, to store in app-state to allow for, later, user cancellation 
-  - optionally, put up a twirly-busy-thing, perhaps with a description pf the request: "Loading all the blah things", perhaps with a cancel button 
-  - trigger `send`
+
+* establish the app-state at the nominated path 
+* optionally, obtain the id of the request, to store in app-state to allow for, later, user cancellation 
+* optionally, put up a twirly-busy-thing, perhaps with a description pf the request: "Loading all the blah things", perhaps with a cancel button 
+* trigger `send`
 
 in-waiting:
-  - you don't write this. Provided by this library. 
-  - wait for an HTTP reponse 
-  - process the response to determine what's happened. 
-  - be careful when doing the initial processing, because, for example, the JSON might have been corrupted. You might get a 200 response but not be able to read the JSON payload. 
-  - triggers either `timeout` or `success`, `unsuccessful`
+
+* you don't write this. Provided by this library. 
+* wait for an HTTP reponse 
+* process the response to determine what's happened. 
+* be careful when doing the initial processing, because, for example, the JSON might have been corrupted. You might get a 200 response but not be able to read the JSON payload. 
+* triggers either `timeout` or `success`, `unsuccessful`
   
 in-processing:
-  - Process the response: turn tansit JSON into transit or 
-  - store in app
-  - trigger `processed`
+
+* Process the response: turn tansit JSON into transit or 
+* store in app
+* trigger `processed`
 
 in-succeeded:
-  - 
-  - trigger `XXX`
+
+* 
+* trigger `XXX`
   
 in-problem:
-  - decide what to do about the problem - retry or give up? 
-  - trigger `fail` or `retry`
+
+* decide what to do about the problem - retry or give up? 
+* trigger `fail` or `retry`
 
 in-failed:
-  - log the error
-  - show the error to the user
-  - 
-  - put the applicatio back into a sane state
-  - trigger `done`
+
+* log the error
+* show the error to the user
+* 
+* put the applicatio back into a sane state
+* trigger `done`
   
 in-cancelled:
-  - put the application into a state consistent with the cancellation. What does the user see? What can they do next. 
-  - update `app-state`, maybe. 
-  - trigger `done`
+
+* put the application into a state consistent with the cancellation. What does the user see? What can they do next. 
+* update `app-state`, maybe. 
+* trigger `done`
   
 in-teardown:
-  - take down the twirly 
-  - change `:loading?` to false. 
-  - trigger `destroy`
+
+* take down the twirly 
+* change `:loading?` to false. 
+* trigger `destroy`
   
 
 
