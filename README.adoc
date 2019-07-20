@@ -38,16 +38,16 @@ These two goals would normally pull in opposite directions but this library libe
 
 Here's a re-frame event handler returning an effect keyed `:http`. 
 
-[source, Clojure]
+[source, Clojure,  numbered]
 ----
 (ref-event-fx 
   :switch-to-articles-panel
   (fn [{:keys [db]} _]
     ;; Note the following :http effect
-    {:http {:http/get  "http://api.something.com/articles/"
+    {:http {:http/get  "http://api.something.com/articles/"   # <1>
             :http/path [:put :response :data :at :this :path :in :app-db]}}))
 ----
-
+<1> get
 
 That `:http` effect will GET from the given URL and place any response data into `app-db` at the given path. The request will be retried on timeouts, and 503 failure, etc. Logs will be written, errors will be reported and interesting statistics will be captured. The user will see a busy-twirly and be able to cancel the request by hitting a button. The response data can be proccessed from JSON and transit into EDN, before ending up at the right place in `app-db`. 
 
