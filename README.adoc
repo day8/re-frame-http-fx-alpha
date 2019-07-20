@@ -7,7 +7,7 @@
 :toc:
 :icons: font
 
-> This library is under development. Best not to read this yet, unless you want to provide ideas/critique. 
+> This library is under development. We're interested in any ideas or experienced-based critiques.
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
@@ -292,20 +292,32 @@ But how?
 
 === Composing Profiles
 
-When each profile holds a `:http/values` map and we must combine multiple of them, how should 
-we "combine" the many into one map to be our `:http` specification?  
+When each profile holds a `:http/values` map and we must compose multiple of them - how should 
+we "combine" the many maps into one, final map which is our `:http` specification?  
 
-The answer is to imagine a `reduce` across a seq of maps, using `merge`. 
-
-Consider:
+The answer is to imagine a `reduce` across a seq of maps, using `merge`:
 [source, Clojure]
 ----
 (reduce merge {}  [map1, map2, map3])
 ----
-`merge` accumulates the key/value pairs,   
-with any values in "later" maps overwriting the values in "earlier" ones. 
+`merge` will accumulate the key/value pairs. Instead of `map1`, `map2`, etc, imagine that 
+it was actually `profile`, `profile2, etc. 
 
-Concrete example:
+Example #1:
+[source, Clojure]
+----
+(def map1 {a: 1})
+(def map2 {b: 2})
+(def map3 {c: 11})
+
+(reduce merge {}  [map1, map2, map3])
+----
+the result is `{a: 1  :b 2  :c 11}`.  
+
+The process is straight forward while ever the maps have disjoint keys. But when that isn't true,
+values in "later" maps overwrite values in "earlier" ones. 
+
+Example #2:
 [source, Clojure]
 ----
 (def map1 {a: 1})
@@ -316,9 +328,10 @@ Concrete example:
 ----
 the result is `{a: 11  :b 2}`. 
 
-You'll notice how `:a` has the value `11`, not `1` because the value for `:a` in `map3` overwrites the earlier value in `map1`. 
+You'll notice that the key `:a` is in both `map1` and `map3`. In the result, `:a` has the value `11`, not `1`, 
+because the value in `map3` overwrites the earlier value in `map1`. 
 
-Remember that `merge` is shallow. Consider:
+Also, remember that `merge` is shallow. Consider:
 [source, Clojure]
 ----
 (def map1 {a: {:aa 1})
@@ -326,23 +339,20 @@ Remember that `merge` is shallow. Consider:
 
 (reduce merge {}  [map1, map2])
 ----
-You might be tempted to thing the result should be: 
-`{a: {:aa 1 :cc 1}}`. 
+You might be tempted to think the result should be
+`{a: {:aa 1 :cc 1}}`
+bBut it is actually: `{a: {:cc 1}}`. 
 
-But it is actually: `{a: {:cc 1}}`. 
-
-The `:a` value of `map2` which is `{:cc 1}` simply replaces **completely** the earlier value of `{:aa 1}`. The maps `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recusively on the values themselves.
+The `:a` value in `map2`, which is `{:cc 1}`, simply replaces **completely** the earlier value of `{:aa 1}`. The values `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recusively on the map values themselves.
 
 == Beyond Default `merge` Behaviour
 
-This default `merge` behaviour is often good enough, particularly when the profiles being combined don't overlapping
-keys. 
+Often, this default `merge` behaviour is often good enough, particularly when combining profiles with disjoint keys. 
 
 But, sometimes, when profiles have overlapping keys it is useful to take control about how the `values` 
 are combined. 
 
-Sometimes this default `merge` behaviour is not enough and this library lets you take change of the 
-combining process for each potential key in `.
+This library lets you take change of the combining process for each potential key in XXX more here.
 
 [source, Clojure]
 ----
@@ -383,18 +393,48 @@ combining process for each potential key in `.
                 ;; 
                 :http/combine   {:http/params   merge
                                  :http/get      str }}}))
-
 ----
 
 == About State
 
-Three kinds:
+Let's talk about the two kinds of State: 
 
-* The Logical State.. A single value which captures the logical state of the FSM
-  which , in turn, controls what "the machine" is currently doing (ie. what *_Logical State Handler_* is executing). 
-* `request-state` is all the detail which this library maintains about a request when it is being performed, including 
-   an id, the original request, number of retries, the trace history through the FSM, etc.  This state exists only for the time the 
-* `presentation-state` - a "projection" of `request-state` which is stored across in `app-db`, at the nominated path. It is a mirrors 
+* `request-state` is operational detail about a request, maintained by this library 
+   to get its job done. So, it is the memory of the FSM and it exists only for the lifetime 
+   of the request. It includes such data as an id, the currently logical
+   state of the FSM, the original request, number of retries, the trace history through
+   the FSM, etc. 
+
+   It is provied to each *_Logical State Handlers_* and they can mutate it. 
+
+   XXX where is this state? It is all data. In `app-db` at a library-specific path? or, outside of `app-db`
+   in an atom held by the library? , deep within the library, 
+
+* `presentation-state` - this application state (not library state) and it is stored in `app-db`. It is typically a map. 
+  It is placed a a particular path. 
+  It is maintained by the *_Logical State Handlers_* 
+  that you write. Typically, the `in-setup` handler initialises this state and it is 
+  then maintained across the request 
+  process as it runs through the "machine" (FSM). It will be something 
+  of a "a materialised view" of the full `request-state` and will be sufficient to render a UI for the user. 
+  This state outlasts the request - particularly the most important part, the processed response to 
+  the request.  
+
+XXX show example of `presentation-state` map. 
+
+XXX consider what else needs to happen to help `re-frame-async-flow`
+
+So, I'd like to stress two points already made:
+   - lifetime: `presentation-state` exists for as long as your applciation code says it should - it persists. Whereas 
+     `request-state` is created and destroyed by this library - it is a means to an ends - it is transatory. 
+   - during the request process, `request-state` tends to be authorative. : `presentation-state` is something 
+     of a projection or materialised view of `request-state`. (Not entirely true but a useful mental model at
+     this early stage in explanation)
+   
+I'd like to stress a point already made. `presentation-state` 
+  . a "a limited projection" of the `
+  will be a "limited projection" 
+  of `request-state` which is stored across in `app-db`, at the nominated path. It is a mirrors 
    of those aspects of the `request-state` which are need to present a UI. So, for example, there might need to be a `:loading?` value      set to true to indicate that the busy twirly should be kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the    `reguest-state` so that, again, the UI can show the user what is happening.  
 
 The `request-state` disappears when the request finishes. But the `presentation-state` persists. Ultimately, the most important part of this `presentation-state` is the response data itself. But there will be other information alongside it. For this reason, `presentation-state` is normally a map of values with a key for `response`, but it has other values.
