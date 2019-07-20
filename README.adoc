@@ -22,7 +22,7 @@ HTTP requests are simple, right?
 
 You send off a request, you get back a response and you store it in `app-db`. Done.
 
-Except, of course, _**requests are anything but simple**_.  There is a happy path, yes, but it winds through a deceptively dense briar thicket of fiddly issues. Coding for unreliable servers and unreliable networks using an async flow of control is hard enough by itself, what with the multiple failure paths and possible retries but, on top of that, there's also the *_cross-cutting issues_* of managing UI updates, user-initiated cancellations, error recovery, logging, statistics gathering, etc. Yeah, there's a bit going on.
+Except, of course, _**requests are anything but simple**_.  There is a happy path, yes, but it winds through a deceptively dense briar thicket of fiddly issues. Coding for unreliable servers and unreliable networks using an async flow of control is hard enough by itself, what with the multiple failure paths and possible retries but, on top of that, there's also the *_cross-cutting issues_* of managing UI updates, user-initiated cancellations, error recovery, logging, statistics gathering, etc. There's a bit going on.
 
 Many programmers instinctively shy away from the tentacles of this complexity, pragmatically preferring naive but simple solutions. And yet, even accepting that tradeoff, they can find themselves with an uncomfortable amount of repetition and boilerplate.
 
@@ -399,49 +399,60 @@ This library lets you take change of the combining process for each potential ke
 
 Let's talk about the two kinds of State: 
 
-* `request-state` is operational detail about a request, maintained by this library 
-   to get its job done. So, it is the memory of the FSM and it exists only for the lifetime 
+* `request-state` is detail about a request, maintained by this library 
+   to get its job done. It represents the "working memory" of the FSM and it 
+   exists only for the lifetime 
    of the request. It includes such data as an id, the currently logical
-   state of the FSM, the original request, number of retries, the trace history through
-   the FSM, etc. 
+   state of the FSM, the original request, current number of retries, a trace history through
+   the FSM including timings, etc. 
 
-   It is provied to each *_Logical State Handlers_* and they can mutate it. 
+   It is provided to each *_Logical State Handler_*. 
 
    XXX where is this state? It is all data. In `app-db` at a library-specific path? or, outside of `app-db`
    in an atom held by the library? , deep within the library, 
 
-* `presentation-state` - this application state (not library state) and it is stored in `app-db`. It is typically a map. 
-  It is placed a a particular path. 
-  It is maintained by the *_Logical State Handlers_* 
-  that you write. Typically, the `in-setup` handler initialises this state and it is 
-  then maintained across the request 
-  process as it runs through the "machine" (FSM). It will be something 
+* `app-state` - this is application state (not library state). 
+  It is typically a map which exists at a particular path within `app-db`. 
+  It is maintained by the  *_Logical State Handlers_* that you write and the path is often supplied 
+  as a part of the request itself. Typically,
+  the `in-setup` handler initialises this map, and it is 
+  then updated across the request handling process by the various FSM handlers. 
+  ine" (FSM). It will be something 
   of a "a materialised view" of the full `request-state` and will be sufficient to render a UI for the user. 
   This state outlasts the request - particularly the most important part, the processed response to 
   the request.  
 
-XXX show example of `presentation-state` map. 
+
+
+An example of `app-state` map. 
+[source, Clojure]
+----
+{
+  :loading?  true
+  :result    nil
+  :retries   0
+  :description  "Loading expired thingos"
+}
+----
+
+This is the data in `app-db` which the view functions might subscribe to, in order to render the 
 
 XXX consider what else needs to happen to help `re-frame-async-flow`
 
 So, I'd like to stress two points already made:
-   - lifetime: `presentation-state` exists for as long as your applciation code says it should - it persists. Whereas 
+   - lifetime: `app-state` exists for as long as your applciation code says it should - it persists. Whereas 
      `request-state` is created and destroyed by this library - it is a means to an ends - it is transatory. 
-   - during the request process, `request-state` tends to be authorative. : `presentation-state` is something 
+   - during the request process, `request-state` tends to be authorative. : `app-state` is something 
      of a projection or materialised view of `request-state`. (Not entirely true but a useful mental model at
      this early stage in explanation)
-   
-I'd like to stress a point already made. `presentation-state` 
-  . a "a limited projection" of the `
-  will be a "limited projection" 
-  of `request-state` which is stored across in `app-db`, at the nominated path. It is a mirrors 
-   of those aspects of the `request-state` which are need to present a UI. So, for example, there might need to be a `:loading?` value      set to true to indicate that the busy twirly should be kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the    `reguest-state` so that, again, the UI can show the user what is happening.  
 
-The `request-state` disappears when the request finishes. But the `presentation-state` persists. Ultimately, the most important part of this `presentation-state` is the response data itself. But there will be other information alongside it. For this reason, `presentation-state` is normally a map of values with a key for `response`, but it has other values.
+While `app-state` ....  there might need to be a `:loading?` value      set to true to indicate that the busy twirly should be kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the    `reguest-state` so that, again, the UI can show the user what is happening.  
+
+Ultimately, the most important part of this `app-state` is the (processed) response data itself. But there will be other information alongside it. For this reason, `presentation-state` is normally a map of values with a key for `response`, but it has other values.
 
 The `presentation-state` (a map) is put at the path nominated within `app-db`.
 
-The `presentation-state` is managed by your `Logical State Handlers`. You control what data is projected from the `request-state` across into the `presentation-state`. Because you, the application programmer, knows what you want to set within `app-db`. You know how you want the UI to render the state of the request process.
+The `app-state` is managed by your `Logical State Handlers`. You control what data is projected from the `request-state` across into the `presentation-state`. Because you, the application programmer, knows what you want to set within `app-db`. You know how you want the UI to render the state of the request process.
 
 For example:
   - it is the job of the `in-setup` to initially create the  `XXX-state` assumed to be a map. 
