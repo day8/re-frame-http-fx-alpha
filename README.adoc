@@ -7,7 +7,8 @@
 :toc:
 :icons: font
 
-> This library is under development. We're interested in any ideas or experienced-based critiques.
+> This library is under development. <br>
+> We're interested in your ideas or critique. Please open an issue. Or tweet me @wazound
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
@@ -397,7 +398,7 @@ This library lets you take change of the combining process for each potential ke
 
 == About State
 
-Let's talk about the two kinds of State: 
+Let's talk about the two kinds of State:
 
 * `request-state` is detail about a request, maintained by this library 
    to get its job done. It represents the "working memory" of the FSM and it 
@@ -406,36 +407,38 @@ Let's talk about the two kinds of State:
    state of the FSM, the original request, current number of retries, a trace history through
    the FSM including timings, etc. 
 
-   It is provided to each *_Logical State Handler_*. 
-
    XXX where is this state? It is all data. In `app-db` at a library-specific path? or, outside of `app-db`
    in an atom held by the library? , deep within the library, 
 
-* `app-state` - this is application state (not library state). 
-  It is typically a map which exists at a particular path within `app-db`. 
-  It is maintained by the  *_Logical State Handlers_* that you write and the path is often supplied 
-  as a part of the request itself. Typically,
+* `app-state` - this is the application state which represents the request (and not the library's state). 
+  It is typically a map which exists at a particular path within `app-db` but the contents of this 
+  map is up to you, the writer of the application. Speaking generally, we can say that it will be 
+  "a materialised view" of the full `request-state` and that this view is created and then maintained by the 
+  *_Logical State Handlers_* you write.
+  
+Typically,
   the `in-setup` handler initialises this map, and it is 
   then updated across the request handling process by the various FSM handlers. 
-  ine" (FSM). It will be something 
-  of a "a materialised view" of the full `request-state` and will be sufficient to render a UI for the user. 
+  ine" (FSM). and will be sufficient to render a UI for the user. 
   This state outlasts the request - particularly the most important part, the processed response to 
   the request.  
-
 
 
 An example of `app-state` map. 
 [source, Clojure]
 ----
 {
-  :loading?  true
-  :result    nil
-  :retries   0
-  :description  "Loading expired thingos"
+  :request-id  123456
+  :loading?    true
+  :error?      nil or "Something bad happened"
+  :result      nil
+  :retries     0
+  :cancelled?  false
+  :description "Loading filtered thingos"
 }
 ----
 
-This is the data in `app-db` which the view functions might subscribe to, in order to render the 
+This is the data in `app-db` which the view functions might subscribe to, in order to render the UI
 
 XXX consider what else needs to happen to help `re-frame-async-flow`
 
@@ -464,7 +467,52 @@ For example:
 == Recipies 
 
 
-XXX the receipies for each of the Logical State Handlers ... 
+Receipies for each of the Logical State Handlers ... 
+
+in-setup:
+  - establish the app-state at the nominated path 
+  - optionally, obtain the id of the request, to store in app-state to allow for, later, user cancellation 
+  - optionally, put up a twirly-busy-thing, perhaps with a description pf the request: "Loading all the blah things", perhaps with a cancel button 
+  - trigger `send`
+
+in-waiting
+  - you don't write this. Provided by this library. 
+  - wait for an HTTP reponse 
+  - process the response to determine what's happened. 
+  - be careful when doing the initial processing, because, for example, the JSON might have been corrupted. You might get a 200 response but not be able to read the JSON payload. 
+  - triggers either `timeout` or `success`, `unsuccessful`
+  
+in-processing
+  - Process the response: turn tansit JSON into transit or 
+  - store in app
+  - trigger `processed`
+
+in-succeeded
+  - 
+  - trigger `XXX`
+  
+in-problem
+  - decide what to do about the problem - retry or give up? 
+  - trigger `fail` or `retry`
+
+in-failed
+  - log the error
+  - show the error to the user
+  - 
+  - put the applicatio back into a sane state
+  - trigger `done`
+  
+in-cancelled
+  - put the application into a state consistent with the cancellation. What does the user see? What can they do next. 
+  - update `app-state`, maybe. 
+  - trigger `done`
+  
+in-teardown 
+  - take down the twirly 
+  - change `:loading?` to false. 
+  - trigger `destroy`
+  
+
 
    
 
