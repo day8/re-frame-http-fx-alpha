@@ -49,7 +49,7 @@ Here's a re-frame event handler returning an effect keyed `:http`.
 ----
 
 
-That `:http` effect will GET from the given URL and place any response data into `app-db` at the given path. The request will be retried on timeouts, and 503 failure, etc. Logs will be written, errors will be reported and interesting statistics will be captured. The user will see a busy-twirly and be able to cancel the request by hitting a button. The response data can be proccessed from JSON and transit into EDN, before ending up at the right place in `app-db`. 
+That `:http` effect will GET from the given URL and place any response data into `app-db` at the given path. The request will be retried on timeouts, and 503 failure, etc. Logs will be written, errors will be reported and interesting statistics will be captured. The user will see a busy-twirly and be able to cancel the request by hitting a button. The response data can be processed from JSON and transit into EDN, before ending up at the right place in `app-db`. 
 
 So with two lines of code - simple ones at that - you'll get a good robust HTTP request process. However, as you'll soon see, there's no  magic happening to achieve the outcome. You do need to *_compose the right defaults_*.
 
@@ -119,7 +119,7 @@ Notes:
 * to use this library, you'll need to understand this FSM
 * the boxes in the diagram represent the FSM's *_Logical States_*
 * the lines between the boxes are the allowed changes between *_Logical States_*, known as *_Transitions_*
-* the names on those lines are the *_Triggers_* (the event which causes the Transistion to happen)
+* the names on those lines are the *_Triggers_* (the event which causes the Transition to happen)
 * when you write a `Logical State Handler` you are implementing the behaviour for one of the boxes
 * the "happy path" is shown in blue  (both boxes and lines)
 * and, yes, there are variations on this FSM model of a request - this one is ours. We could, for example, have teased the "Problem" Logical State out into four distinct states: "Timed Out", "Connection Problem", "Recoverable Server Problem" and "Unrecoverable Server Problem".  We decided to NOT do that because of, well, reasons. My point is that there isn't a "right" model, just one that suits a purpose.
@@ -315,7 +315,7 @@ Example #1:
 ----
 the result is `{a: 1  :b 2  :c 11}`.  
 
-The process is straight forward while ever the maps have disjoint keys. But when that isn't true,
+The process is straightforward while ever the maps have disjoint keys. But when that isn't true,
 values in "later" maps overwrite values in "earlier" ones. 
 
 Example #2:
@@ -344,7 +344,7 @@ You might be tempted to think the result should be
 `{a: {:aa 1 :cc 1}}`
 bBut it is actually: `{a: {:cc 1}}`. 
 
-The `:a` value in `map2`, which is `{:cc 1}`, simply replaces **completely** the earlier value of `{:aa 1}`. The values `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recusively on the map values themselves.
+The `:a` value in `map2`, which is `{:cc 1}`, simply replaces **completely** the earlier value of `{:aa 1}`. The values `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recursively on the map values themselves.
 
 == Beyond Default `merge` Behaviour
 
@@ -396,35 +396,34 @@ This library lets you take change of the combining process for each potential ke
                                  :http/get      str }}}))
 ----
 
-== About State
+= About State
 
-Let's talk about the two kinds of State:
+XXX this section is messy and incomplete .... 
+
+There are two kinds of State:
 
 * `request-state` is detail about a request, maintained by this library 
-   to get its job done. It represents the "working memory" of the FSM and it 
-   exists only for the lifetime 
-   of the request. It includes such data as an id, the currently logical
+   in the course of getting its job done. It represents the "working memory" 
+   of the FSM and it only exists for the lifetime of a request. 
+   It includes data such as an id, the current logical
    state of the FSM, the original request, current number of retries, a trace history through
    the FSM including timings, etc. 
 
-   XXX where is this state? It is all data. In `app-db` at a library-specific path? or, outside of `app-db`
-   in an atom held by the library? , deep within the library, 
+   XXX issac where is this state? Currently stored in an atom help within the library. But 
+   it is all data and it could be put into `app-db` at a library-specific path? 
 
-* `app-state` - this is the application state which represents the request (and not the library's state). 
-  It is typically a map which exists at a particular path within `app-db` but the contents of this 
-  map is up to you, the writer of the application. Speaking generally, we can say that it will be 
-  "a materialised view" of the full `request-state` and that this view is created and then maintained by the 
-  *_Logical State Handlers_* you write.
+* `app-state` - this is the application state which represents the request (not the library's state). 
+  It is a small map of values which exists at a particular path within `app-db` and the contents of this 
+  map is up to you, the writer of the application. It will be created and maintained by the 
+  *_Logical State Handlers_* you write and it will always be 
+  "a materialised view" of the full `request-state`. 
   
-Typically,
-  the `in-setup` handler initialises this map, and it is 
-  then updated across the request handling process by the various FSM handlers. 
-  ine" (FSM). and will be sufficient to render a UI for the user. 
-  This state outlasts the request - particularly the most important part, the processed response to 
-  the request.  
+XXX better names? Maybe `lib-state` and `app-state`. Not keen on `app-state`.  `your-state`  `ui-state`
+  
+Typically, the `in-setup` state handler initialises this map, and it is 
+then updated across the request handling process by the various FSM handlers. 
 
-
-An example of `app-state` map. 
+An example of the `app-state` map. 
 [source, Clojure]
 ----
 {
@@ -438,22 +437,20 @@ An example of `app-state` map.
 }
 ----
 
-This is the data in `app-db` which the view functions might subscribe to, in order to render the UI
+This is the data in `app-db` which some view functions might subscribe to, in order to render the UI
 
 XXX consider what else needs to happen to help `re-frame-async-flow`
 
 So, I'd like to stress two points already made:
-   - lifetime: `app-state` exists for as long as your applciation code says it should - it persists. Whereas 
-     `request-state` is created and destroyed by this library - it is a means to an ends - it is transatory. 
-   - during the request process, `request-state` tends to be authorative. : `app-state` is something 
+   - lifetime: `app-state` exists for as long as your application code says it should - it persists. Whereas 
+     `request-state` is created and destroyed by this library - it is a means to an ends - it is transitory. 
+   - during the request process, `request-state` tends to be authoritative. : `app-state` is something 
      of a projection or materialised view of `request-state`. (Not entirely true but a useful mental model at
      this early stage in explanation)
 
 While `app-state` ....  there might need to be a `:loading?` value      set to true to indicate that the busy twirly should be kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the    `reguest-state` so that, again, the UI can show the user what is happening.  
 
 Ultimately, the most important part of this `app-state` is the (processed) response data itself. But there will be other information alongside it. For this reason, `presentation-state` is normally a map of values with a key for `response`, but it has other values.
-
-The `presentation-state` (a map) is put at the path nominated within `app-db`.
 
 The `app-state` is managed by your `Logical State Handlers`. You control what data is projected from the `request-state` across into the `presentation-state`. Because you, the application programmer, knows what you want to set within `app-db`. You know how you want the UI to render the state of the request process.
 
@@ -464,20 +461,21 @@ For example:
     (thus taking down the twirly). 
     
     
-== Recipies 
+= Recipes 
 
 .To use this library, you must:
-* design `app-state` and the views which render it (or simply use the default design we suggest)
-* write your Logical State Handlers (or simply use the default handlers we provide)
+* design `app-state` and the views which render it (or simply use the default design suggested)
+* write your Logical State Handlers (or simply use the default handlers provided)
 
 
 The Logical State Handlers have responsibility for mirroring a view of `request-state` across into `app-state`. 
 
-Receipies for each of the Logical State Handlers ... 
+Recipes for each of the Logical State Handlers ... 
 
 === in-setup
 
-Prepare your `app-state` for the request. Views which are subscribed to this state will then render the UI, allowing the user to see feedback. 
+Initialize `app-state` for this request. Views subscribed to this state will 
+then render the UI, allowing the user to see feedback. 
 
 XXX coincidently, a panel might change .... perhaps the user clicked a button to "view foobars", so the application will change panels to the foobars one, AND also kickoff the request to get the foobars. 
 
@@ -492,7 +490,7 @@ XXX coincidently, a panel might change .... perhaps the user clicked a button to
 
 This State Handler is unique because it is the only one you can't write. It is provided by this library.
 
-In this state, we are waiting for an HTTP reponse (after the `fetch` is launched). 
+In this state, we are waiting for an HTTP response (after the `fetch` is launched). 
 
 When the response arrives and it is a 200 HTTP status, then do some initial processing of the response. Use the mime-type to XXX. 
 
@@ -502,7 +500,7 @@ When the response arrives and it is a 200 HTTP status, then do some initial proc
   
 === in-processing
 
-* Process the response: turn tansit JSON into transit or 
+* Process the response: turn transit JSON into transit or 
 * store in app
 * trigger `processed`
 
@@ -544,14 +542,14 @@ Ultimately, it doesn't actually matter why we are in the failed state, but to he
 * no outright failure, but too many retries (see `:http/history` XXX for what happened)  
 * some kind of networking error happened which means the request never even got to the target server (CORS, DNS error?)
 * the server failed in some way (didn't return a 200) 
-* a 200 response was recieved but an error occured when processing that response
+* a 200 response was received but an error occurred when processing that response
 
 
-.Reciepy
+.Recipy
 * log the error
 * show the error to the user
 * 
-* put the applicatio back into a sane state
+* put the application back into a sane state
 * trigger `done`
   
 
@@ -577,6 +575,7 @@ As a result, in this state we handle any actions which have to happen irrespecti
   * busy twirly removal
 * fsm trigger `destroy`
   
+
 
 
 
