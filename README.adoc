@@ -538,10 +538,14 @@ taxonomy of Problems:
 
 === in-failed
 
-.We are in this state because of one of the following reasons:
+The request has failed and we must now adjust for that. 
+
+Ultimately, it doesn't actually matter why we are in the failed state, but to help give context, here's the sort of reasons we end up in this state:
 * no outright failure, but too many retries (see `:http/history` XXX for what happened)  
-* unrecoverable server error
-* an error occured when processing a response
+* some kind of networking error happened which means the request never even got to the target server (CORS, DNS error?)
+* the server failed in some way (didn't return a 200) 
+* a 200 response was recieved but an error occured when processing that response
+
 
 .Reciepy
 * log the error
@@ -553,15 +557,25 @@ taxonomy of Problems:
 
 === in-cancelled
 
+This state follows user cancellation. 
+
 * put the application into a state consistent with the cancellation. What does the user see? What can they do next. 
 * update `app-state`, maybe. 
 * trigger `done`
   
-in-teardown:
+=== in-teardown
+
+Irrespective of the outcome of the request (success, cancellation or failure), this state occurs immediately before it completes. 
+
+As a result, in this state we handle any actions which have to happen irrespective of the outcome.
 
 * take down the twirly 
-* change `:loading?` to false. 
-* trigger `destroy`
+* accumulate and log final stats 
+* possible updates to `app-state`
+  * change `:loading?` to false
+* possible updates to `app-db` 
+  * busy twirly removal
+* fsm trigger `destroy`
   
 
 
