@@ -38,16 +38,16 @@ These two goals would normally pull in opposite directions but this library libe
 
 Here's a re-frame event handler returning an effect keyed `:http`. 
 
-[source, Clojure,  numbered]
+[source, Clojure]
 ----
 (ref-event-fx 
   :switch-to-articles-panel
   (fn [{:keys [db]} _]
     ;; Note the following :http effect
-    {:http {:http/get  "http://api.something.com/articles/"   # <1>
+    {:http {:http/get  "http://api.something.com/articles/"  
             :http/path [:put :response :data :at :this :path :in :app-db]}}))
 ----
-<1> get
+
 
 That `:http` effect will GET from the given URL and place any response data into `app-db` at the given path. The request will be retried on timeouts, and 503 failure, etc. Logs will be written, errors will be reported and interesting statistics will be captured. The user will see a busy-twirly and be able to cancel the request by hitting a button. The response data can be proccessed from JSON and transit into EDN, before ending up at the right place in `app-db`. 
 
@@ -466,49 +466,92 @@ For example:
     
 == Recipies 
 
+.To use this library, you must:
+* design `app-state` and the views which render it (or simply use the default design we suggest)
+* write your Logical State Handlers (or simply use the default handlers we provide)
+
+
+The Logical State Handlers have responsibility for mirroring a view of `request-state` across into `app-state`. 
 
 Receipies for each of the Logical State Handlers ... 
 
-in-setup:
+=== in-setup
 
-* establish the app-state at the nominated path 
-* optionally, obtain the id of the request, to store in app-state to allow for, later, user cancellation 
-* optionally, put up a twirly-busy-thing, perhaps with a description pf the request: "Loading all the blah things", perhaps with a cancel button 
-* trigger `send`
+Prepare your `app-state` for the request. Views which are subscribed to this state will then render the UI, allowing the user to see feedback. 
 
-in-waiting:
+XXX coincidently, a panel might change .... perhaps the user clicked a button to "view foobars", so the application will change panels to the foobars one, AND also kickoff the request to get the foobars. 
 
-* you don't write this. Provided by this library. 
-* wait for an HTTP reponse 
+.Do this:
+* establish initial `app-state` at the nominated path 
+* obtain the id of the request, and store it in `app-state` so it can be used later when the user clicks the "cancel" button. 
+* optionally, put up a twirly-busy-thing, perhaps with a description of the request: "Loading all the blah things", perhaps with a cancel button 
+* FSM: trigger `send`
+
+
+=== in-waiting
+
+This State Handler is unique because it is the only one you can't write. It is provided by this library.
+
+In this state, we are waiting for an HTTP reponse (after the `fetch` is launched). 
+
+When the response arrives and it is a 200 HTTP status, then do some initial processing of the response. Use the mime-type to XXX. 
+
 * process the response to determine what's happened. 
 * be careful when doing the initial processing, because, for example, the JSON might have been corrupted. You might get a 200 response but not be able to read the JSON payload. 
 * triggers either `timeout` or `success`, `unsuccessful`
   
-in-processing:
+=== in-processing
 
 * Process the response: turn tansit JSON into transit or 
 * store in app
 * trigger `processed`
 
-in-succeeded:
+
+=== in-succeeded
+
+The processing of the response has succeeded. What actions do we want to take?
+
+Perhaps fire another event? 
 
 * 
 * trigger `XXX`
   
-in-problem:
+
+=== in-problem
 
 * decide what to do about the problem - retry or give up? 
 * trigger `fail` or `retry`
 
-in-failed:
 
+taxonomy of Problems:
+
+* network connection error - no response - retry-able (except that DNS issues take a long time, so retires are annoying)
+* cross-site scripting whereby access is denied; or
+* requesting a URI that is unreachable (typo, DNS issues, invalid hostname etc); or
+* request is interrupted after being sent (browser refresh or navigates away from the page); or
+* request is otherwise intercepted (check your ad blocker).
+* timeout - no response - retry-able
+* non 200 HTTP status - returned from the server - will have a response
+* may have a response :body returned from server which will might need to be processed. See https://tools.ietf.org/html/rfc7807 Imagine a 403 Forbidden response. XXX talk about how it might be EDN or a Blob etc.
+* some HTTP status are retry-able and some are not
+
+
+=== in-failed
+
+.We are in this state because of one of the following reasons:
+* no outright failure, but too many retries (see `:http/history` XXX for what happened)  
+* unrecoverable server error
+* an error occured when processing a response
+
+.Reciepy
 * log the error
 * show the error to the user
 * 
 * put the applicatio back into a sane state
 * trigger `done`
   
-in-cancelled:
+
+=== in-cancelled
 
 * put the application into a state consistent with the cancellation. What does the user see? What can they do next. 
 * update `app-state`, maybe. 
@@ -521,8 +564,6 @@ in-teardown:
 * trigger `destroy`
   
 
-
-   
 
 
 
