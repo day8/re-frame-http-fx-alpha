@@ -280,24 +280,36 @@
 
 (def fsm
   "A mapping of states to valid transitions out of that state."
-  {:requested  #{:waiting :failed}
+  {:requested  #{:setup :failed}
+   :setup      #{:waiting}
    :waiting    #{:problem :processing :cancelled}
-   :problem    #{:requested :failed}
+   :problem    #{:waiting :failed}
    :processing #{:failed :succeeded}
-   :failed     #{:done}
-   :succeeded  #{:done}
-   :cancelled  #{:done}
-   :done       #{}})
+   :failed     #{:teardown}
+   :succeeded  #{:teardown}
+   :cancelled  #{:teardown}
+   :teardown   #{}})
+
+(def transition->to-state
+  {:request   :setup
+   :fetch     :waiting
+   :problem   :problem
+   :success   :processing
+   :fail      :failed
+   :processed :succeeded
+   :abort     :cancelled
+   :done      :teardown})
 
 (def fsm->event-keys
   "A mapping of states to the event handler to dispatch in that state."
-  {:waiting    :in-wait
+  {:setup      :in-setup
+   :waiting    :in-wait
    :problem    :in-problem
    :processing :in-process
    :cancelled  :in-cancelled
    :failed     :in-failed
    :succeeded  :in-succeeded
-   :done       :in-done})
+   :teardown   :in-teardown})
 
 (defn fsm-swap-fn
   "In current value of request-id->request-and-controller moves state of request
@@ -379,7 +391,18 @@
 
 (defn fetch
   "Initiate the request. Returns nil."
-  [{:keys [url params timeout] :as request}]
+  [{:keys [request-id]}]
+  (fsm->! request-id :waiting)
+  (let [request (get-in @request-id->request-and-controller [request-id ::request])
+        {:keys [url timeout]} request]
+    (-> (timeout-race (js/fetch url (request->js-init request controller)) timeout)
+        (.then (partial response-handler request-id))
+        (.catch (partial problem-handler request-id)))
+    nil))
+
+(defn setup
+  "Initialise the request. Returns nil."
+  [{:keys [url params] :as request}]
   (let [request-id (keyword (gensym "http-"))
         url' (str url (params->str params))
         request' (-> request
@@ -387,46 +410,47 @@
                              :url        url'
                              :state      :requested})
                      (m+profiles))
-        controller (js/AbortController.)]
+        js-controller (js/AbortController.)]
     (swap! request-id->request-and-controller
            #(assoc %1 %2 %3)
            request-id
            {::request       request'
-            ::js-controller controller})
-    (fsm->! request-id :waiting)
-    (-> (timeout-race (js/fetch url' (request->js-init request' controller)) timeout)
-        (.then (partial response-handler request-id))
-        (.catch (partial problem-handler request-id)))
+            ::js-controller js-controller})
+    (fsm->! request-id :setup)
     nil))
 
 (defmethod sub-effect :get
   [{url :get :as request}]
-  (fetch (merge request {:method "GET" :url url})))
+  (setup (merge request {:method "GET" :url url})))
 
 (defmethod sub-effect :head
   [{url :head :as request}]
-  (fetch (merge request {:method "HEAD" :url url})))
+  (setup (merge request {:method "HEAD" :url url})))
 
 (defmethod sub-effect :post
   [{url :post :as request}]
-  (fetch (merge request {:method "POST" :url url})))
+  (setup (merge request {:method "POST" :url url})))
 
 (defmethod sub-effect :put
   [{url :put :as request}]
-  (fetch (merge request {:method "PUT" :url url})))
+  (setup (merge request {:method "PUT" :url url})))
 
 (defmethod sub-effect :delete
   [{url :delete :as request}]
-  (fetch (merge request {:method "DELETE" :url url})))
+  (setup (merge request {:method "DELETE" :url url})))
 
 (defmethod sub-effect :options
   [{url :options :as request}]
-  (fetch (merge request {:method "OPTIONS" :url url})))
+  (setup (merge request {:method "OPTIONS" :url url})))
 
-(defmethod sub-effect :transition
-  [{to-state                  :transition
-    {:keys [request-id]} :request}]
-  (fsm->! request-id to-state))
+(defmethod sub-effect :trigger
+  [{transition :trigger
+    request-id :request-id}]
+  (let [request (get-in @request-id->request-and-controller [request-id ::request])
+        to-state (get transition->to-state transition)]
+    (when (= :fetch transition)
+      (fetch request))
+    (fsm->! request-id to-state)))
 
 ;; Abort
 ;; =============================================================================
