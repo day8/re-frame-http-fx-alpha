@@ -379,8 +379,8 @@
 
 (defn fetch
   "Initiate the request. Returns nil."
-  [{:http/keys [request-id url params timeout] :as request}]
-  (let [request-id (or request-id (keyword (gensym "http-")))
+  [{:http/keys [url params timeout] :as request}]
+  (let [request-id (keyword (gensym "http-"))
         url' (str url (params->str params))
         request' (-> request
                      (merge #:http {:request-id request-id
