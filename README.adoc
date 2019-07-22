@@ -467,7 +467,7 @@ But when the profiles have overlapping keys it can be useful to take control abo
                 ;;      overwrite the value in the other profile. 
                 ;; 
                 :combine   {:params   merge
-                                 :get      str }}}))
+                            :get      str}}}))
 ----
 
 XXX is there a default "combiner" for each key in `:values`?
@@ -691,20 +691,45 @@ Ultimately, it doesn't actually matter why we are in the failed state, but to he
 .Recipe:
 * log the error
 * show the error to the user
-* 
 * put the application back into a sane state
 * trigger `done`
-  
+
+Example implementation:
+[source, Clojure]
+----
+(fn [cofx [_ request-state]]
+  (let [db (:db cofx)
+        {:keys [request-id context problem response]} request-state
+        path (:path context)]
+    {:http {:trigger :done
+            :request-id request-id}
+     :db (-> db
+             ...)}))
+----
 
 === in-cancelled
 
 This state follows user cancellation. 
 
 .Recipe:
-* put the application into a state consistent with the cancellation. What does the user see? What can they do next. 
+* put the application into a state consistent with the cancellation. What does
+the user see? What can they do next?
 * update `app-state`, maybe. 
 * trigger `done`
-  
+
+Example implementation:
+[source, Clojure]
+----
+(fn [cofx [_ request-state]]
+  (let [db (:db cofx)
+        {:keys [request-id context problem response]} request-state
+        path (:path context)]
+    {:http {:trigger :done
+            :request-id request-id}
+     :db (-> db
+             ...)}))
+----
+
 === in-teardown
 
 Irrespective of the outcome of the request (success, cancellation or failure), this state occurs immediately before it completes. 
@@ -719,8 +744,19 @@ As a result, in this state we handle any actions which have to happen irrespecti
 * possible updates to `app-db` 
   * busy twirly removal
 * fsm trigger `destroy`
-  
 
+Example implementation:
+[source, Clojure]
+----
+(fn [cofx [_ request-state]]
+  (let [db (:db cofx)
+        {:keys [request-id context]} request-state
+        path (:path context)]
+    {:http {:trigger :destroy
+            :request-id request-id}
+     :db (-> db
+           (assoc-in [:global :loading?] false))}))
+----
 
 
 
