@@ -393,9 +393,9 @@
   "Initiate the request. Returns nil."
   [{:keys [request-id]}]
   (fsm->! request-id :waiting)
-  (let [request (get-in @request-id->request-and-controller [request-id ::request])
+  (let [{::keys [request js-controller]} (get @request-id->request-and-controller request-id)
         {:keys [url timeout]} request]
-    (-> (timeout-race (js/fetch url (request->js-init request controller)) timeout)
+    (-> (timeout-race (js/fetch url (request->js-init request js-controller)) timeout)
         (.then (partial response-handler request-id))
         (.catch (partial problem-handler request-id)))
     nil))
