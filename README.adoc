@@ -440,6 +440,8 @@ An example of the `app-state` map.
 
 This is the data in `app-db` which some view functions might subscribe to, in order to render the UI
 
+XXX To avoid race conditions should the booleans be false in absence.  Eg: use `completed?` instead of `loading?` because "absence" (a nil) correctly matches the predacate's negative value. 
+
 XXX consider what else needs to happen to help `re-frame-async-flow`
 
 So, I'd like to stress two points already made:
@@ -462,31 +464,35 @@ For example:
     (thus taking down the twirly). 
     
     
-= State Hander Recipes 
+= Logical State Hander Recipes 
+
 
 .To use this library, you'll:
 * design `app-state` and the views which render it (or simply use the default design suggested)
-* write your Logical State Handlers (or simply use the default handlers provided)
+* implement your Logical State Handlers (or simply use the default handlers provided)
 
-The Logical State Handlers have responsibility for mirroring a view of `request-state` across into `app-state`. 
+The Logical State Handlers you write are about "executing the behaviour" associated with being _*in_* a particular state within the FSM. They implement behaviour for one part of "the machine".
+
+The Logical State Handlers have responsibility for mirroring a view of `request-state` across into `app-state`.
 
 Recipes for each of the Logical State Handlers ... 
 
 === in-setup
 
-Initialize `app-state` for this request.
-
-Views subscribed to this `app-state` will 
-then render the UI, probably locking it up and allowing the user to see that a request is in-flight.
-
-XXX a panel might change .... perhaps the user clicked a button to "View Inappropriate", so the application will change panels to the inappropriates one (via a change in `app-db` state), AND also kickoff a server request to get the "inappropriates".
+Overview: prepare the application for the pending HTTP request. 
 
 .Recipe:
 * establish initial `app-state` at the nominated `:http/path`
 * optionally, if the application is to allow th user to cancel the request (via a button?) then capture the `:http/id` of teh request and assoc it into `app-state` for easy access. 
 * optionally, put up a twirly-busy-thing, perhaps with a description of the request: "Loading all the blah things", perhaps with a cancel button 
 * optionally, cause the application to change panel or view to be ready for the incoming response data. 
-* trigger `send` to cause the tranistion to `in-waiting`, with the `fetch` being the tranistions associated action. 
+* trigger `send` to cause the tranistion to `waiting`, with the `fetch` being an action associated with the transition. 
+
+
+Views subscribed to this `app-state` will 
+then render the UI, probably locking it up and allowing the user to see that a request is in-flight.
+
+XXX a panel might change .... perhaps the user clicked a button to "View Inappropriate", so the application will change panels to the inappropriates one (via a change in `app-db` state), AND also kickoff a server request to get the "inappropriates".
 
 Example implementation:
 [source, Clojure]
@@ -499,6 +505,7 @@ Example implementation:
     }))
 ----
 
+XXX once preparation is complete, notice that your code is expected to `trigger` the tranistion. 
 
 === in-waiting
 
