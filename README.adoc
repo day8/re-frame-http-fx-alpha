@@ -246,17 +246,17 @@ pendulum to the opposite extreme and show you *_the most verbose_* use of the
              :in-failed     [:call-mum]
              :in-cancelled  [:generic-cancelled]
              :in-succeeded  [:yah! "fist-pump" :twice]
-             :in-done       [:so-tired-now]
+             :in-teardown   [:so-tired-now]
              
              
              :params     {:user     "Fred"
-                               :customer "big one"}
+                          :customer "big one"}
              :headers    {"Authorization"  "Bearer QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
-                               "Cache-Control"  "no-cache"}
+                          "Cache-Control"  "no-cache"}
 
              ;; XXX describe this 
              :content-type {#"application/.*json" :json
-                                 #"application/edn"    :text}
+                            #"application/edn"    :text}
 
              ;; Timeout
              ;; optional, by default request will run as long as browser implementation allows
@@ -327,16 +327,16 @@ with it certain specification values:
       
                 ;; the values we are capturing and associating with this profile 
                 :values {
-                              ;; compose the FSM
-                              :in-process    [:my-processor]
-                              :in-problem    [:generic-problem :extra "whatever"]
-                              :in-failed     [:my-special-failed]
-                              :in-cancelled  [:generic-cancelled]
-                              :in-done       [:generic-done]
-                              
-                              :timeout       3000
-                              
-                              :context  {:max-retries 2}}}}))
+                          ;; compose the FSM
+                          :in-process    [:my-processor]
+                          :in-problem    [:generic-problem :extra "whatever"]
+                          :in-failed     [:my-special-failed]
+                          :in-cancelled  [:generic-cancelled]
+                          :in-teardown   [:generic-teardown]
+
+                          :timeout       3000
+
+                          :context  {:max-retries 2}}}}))
 ----
 
 XXX Isaac are we using `default? true` approach?
@@ -438,16 +438,16 @@ But when the profiles have overlapping keys it can be useful to take control abo
       
                 ;; the values we are capturing and associating with this profile 
                 :values {
-                              ;; compose the FSM
-                              :in-process    [:my-processor]
-                              :in-problem    [:generic-problem :extra "whatever"]
-                              :in-failed     [:my-special-failed]
-                              :in-cancelled  [:generic-cancelled]
-                              :in-done       [:generic-done]
-                              
-                              :timeout       3000
-                              
-                              :context  {:max-retries 2}}}}))
+                          ;; compose the FSM
+                          :in-process    [:my-processor]
+                          :in-problem    [:generic-problem :extra "whatever"]
+                          :in-failed     [:my-special-failed]
+                          :in-cancelled  [:generic-cancelled]
+                          :in-teardown   [:generic-teardown]
+
+                          :timeout       3000
+
+                          :context  {:max-retries 2}}}}))
                 
                 ;; Optional, advanced feature.
                 ;; Profiles themselves can be combined/composed.
@@ -562,7 +562,7 @@ Overview: prepare the application for the pending HTTP request.
 * optionally, if the application is to allow th user to cancel the request (via a button?) then capture the `:id` of teh request and assoc it into `app-state` for easy access.
 * optionally, put up a twirly-busy-thing, perhaps with a description of the request: "Loading all the blah things", perhaps with a cancel button 
 * optionally, cause the application to change panel or view to be ready for the incoming response data. 
-* trigger `send` to cause the tranistion to `waiting`, with the `fetch` being an action associated with the transition. 
+* trigger `fetch` to cause the transition to `waiting`, with the `fetch` being an action associated with the transition.
 
 
 Views subscribed to this `app-state` will 
@@ -573,39 +573,27 @@ XXX a panel might change .... perhaps the user clicked a button to "View Inappro
 Example implementation:
 [source, Clojure]
 ----
-(fn [cofx event]
-  (let [...]
-    {:http  {:trigger :XXX
-             :request request XXX}
-     :db    (assoc-in (:db cofx) 
-    }))
+(fn [cofx [_ request-state]]
+  (let [db (:db cofx)
+        {:keys [request-id context]} request-state]
+    {:http  {:trigger :fetch
+             :request-id request-id}
+     :db    (-> db
+              (assoc-in (conj (:path context) :request-id) request-id)
+              (assoc-in [:global :loading?] true)
+              (assoc-in [:global :loading-text] (:loading-text context)))}))
 ----
 
-XXX once preparation is complete, notice that your code is expected to `trigger` the tranistion. 
+XXX once preparation is complete, notice that your code is expected to `trigger` the transition.
 
 === in-waiting
 
-This State Handler is unique because it is the only one you can't write. It is provided by this library.
+This State Handler is unique because it is the only one you can't write. It is
+provided by this library.
 
-In this state, we are waiting for an HTTP response (after the `fetch` is launched). 
-
-When the response arrives and it is a 200 HTTP status, then do some initial processing of the response. Use the mime-type to XXX. 
-
-.Recipe:
-* process the response to determine what's happened. 
-* be careful when doing the initial processing, because, for example, the JSON might have been corrupted. You might get a 200 response but not be able to read the JSON payload. 
-* triggers either `timeout` or `success`, `unsuccessful`
-
-Example implementation
-[source, Clojure]
-----
-(fn [cofx event]
-  (let [...]
-    {:trigger :XXX
-     :request request
-    }))
-----
-
+In this state, we are waiting for an HTTP response (after the `fetch` is
+launched) and any subsequent initial processing of the response body by the
+browser.
 
 === in-processing
 
@@ -617,23 +605,39 @@ Example implementation
 Example implementation
 [source, Clojure]
 ----
-(fn [cofx event]
-  (let [...]
-    {:trigger :XXX
-     :request request
-    }))
+(fn [cofx [_ request-state]]
+  (let [db (:db cofx)
+        {:keys [request-id response context]} request-state
+        path (:path context)
+        reader (transit/reader :json)]
+    (try
+      (let [data (transit/read reader (:body response))]
+        {:db (assoc-in db (conj path :data) data)
+         :http {:trigger :processed
+                :request-id request-id}}))
+      (catch js/Error e
+        {:db   (-> db
+                 (assoc-in (conj path :error) :transit-reader))
+         :http {:trigger :fail
+                :request-id request-id}})))
 ----
 
 
 === in-succeeded
 
-The processing of the response has succeeded. What actions do we want to take?
+The processing of the response has succeeded.
 
-Perhaps fire another event? 
-
-* 
+.Recipe:
 * trigger `XXX`
-  
+
+Example implementation
+[source, Clojure]
+----
+(fn [cofx [_ request-state]]
+  (let [{:keys [request-id]} request-state]
+    {:http {:trigger :done
+            :request-id request-id}}))
+----
 
 === in-problem
 
@@ -641,16 +645,35 @@ Perhaps fire another event?
 * decide what to do about the problem - retry or give up? 
 * trigger `fail` or `retry`
 
+Example implementation:
+[source, Clojure]
+----
+(fn [cofx [_ request-state]]
+  (let [db (:db cofx)
+        {:keys [request-id context problem response]} request-state
+        path (:path context)
+        temporary? (= :timeout problem)
+        max-retries (:max-retries context)
+        num-retries (get-in db (conj path :num-retries request-id) 0)
+        try-again? (and (< num-retries max-retries) temporary?)]
+    (if try-again?
+      {:http {:trigger :fetch
+              :request-id request-id}
+       :db (update-in db (conj path :num-retries request-id) inc)}
+      {:http {:trigger :fail
+              :request-id request-id}})))
+----
 
-.XXX we need a full taxonomy of problems here:
+.Full taxonomy of problems:
 * network connection error - no response - retry-able (except that DNS issues take a long time, so retires are annoying)
-* cross-site scripting whereby access is denied; or
-* requesting a URI that is unreachable (typo, DNS issues, invalid hostname etc); or
-* request is interrupted after being sent (browser refresh or navigates away from the page); or
-* request is otherwise intercepted (check your ad blocker).
+  ** cross-site scripting whereby access is denied; or
+  ** requesting a URI that is unreachable (typo, DNS issues, invalid hostname etc); or
+  ** request is interrupted after being sent (browser refresh or navigates away from the page); or
+  ** request is otherwise intercepted (check your ad blocker).
+* `fetch` API body processing error; e.g. JSON parse error.
 * timeout - no response - retry-able
-* non 200 HTTP status - returned from the server - will have a response
-* may have a response :body returned from server which will might need to be processed. See https://tools.ietf.org/html/rfc7807 Imagine a 403 Forbidden response. XXX talk about how it might be EDN or a Blob etc.
+* non 200 HTTP status - returned from the server - MAY have a response
+** may have a response :body returned from server which will might need to be processed. See https://tools.ietf.org/html/rfc7807 Imagine a 403 Forbidden response. XXX talk about how it might be EDN or a Blob etc.
 * some HTTP status are retry-able and some are not
 
 
