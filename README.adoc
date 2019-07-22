@@ -324,6 +324,9 @@ with it certain specification values:
                 ;; Clearly, you can register multiple profiles
                 
                 :reg-profile   :xyz
+
+                ;; Sets this profile as the 'default'.
+                :default? true
       
                 ;; the values we are capturing and associating with this profile 
                 :values {
@@ -339,8 +342,7 @@ with it certain specification values:
                           :context  {:max-retries 2}}}}))
 ----
 
-XXX Isaac are we using `default? true` approach?
-XXX where do we talk about default. 
+XXX where do we talk about default.
 
 == Using A Profile
 
