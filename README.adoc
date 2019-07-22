@@ -258,11 +258,6 @@ pendulum to the opposite extreme and show you *_the most verbose_* use of the
              :http/content-type {#"application/.*json" :json
                                  #"application/edn"    :text}
 
-
-             ;; Optional, defaults to (keyword (gensym "http-")) e.g. :http-123
-             ;; Useful when you want to 
-             :http/id            :my-xyz-request ;; otherwise defaults to (keyword (gensym "http-")) e.g. http-123
-
              ;; Timeout
              ;; optional, by default request will run as long as browser implementation allows
              :http/timeout       5000 
