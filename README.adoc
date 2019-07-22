@@ -59,8 +59,8 @@ Here's a re-frame event handler returning an effect keyed `:http`.
   :switch-to-articles-panel
   (fn [{:keys [db]} _]
     ;; Note the following :http effect
-    {:http {:http/get  "http://api.something.com/articles/"  
-            :http/path [:put :response :data :at :this :path :in :app-db]}}))
+    {:http {:get  "http://api.something.com/articles/"
+            :path [:put :response :data :at :this :path :in :app-db]}}))
 ----
 
 
@@ -215,8 +215,8 @@ Earlier we saw this code:
   :switch-to-articles-panel
   (fn [{:keys [db]} _]
     ;; Note the following :http effect
-    {:http {:http/get  "http://api.something.com/articles/"
-            :http/path [:put :response :data :at :this :path :in :app-db]}}))
+    {:http {:get  "http://api.something.com/articles/"
+            :path [:put :response :data :at :this :path :in :app-db]}}))
 ----
 
 It uses an effect `:http` to initiate an HTTP GET request. 
@@ -229,7 +229,7 @@ pendulum to the opposite extreme and show you *_the most verbose_* use of the
 (reg-event-fx
   :request-articles
   (fn [_ _]
-    {:http  {:http/get        "http://api.something.com/articles/"
+    {:http  {:get        "http://api.something.com/articles/"
 
              ;; Compose the FSM
              ;; Nominate the `Logical State handlers` to be used for this request.
@@ -240,54 +240,54 @@ pendulum to the opposite extreme and show you *_the most verbose_* use of the
              ;; When the request transitions to a new Logical State, it will `dispatch`
              ;; the event you nominate below, and the associated event handler is expected
              ;; to perform "the behaviour" required in that Logical State.
-             :http/in-setup      [:my-setup]
-             :http/in-process    [:my-processor]
-             :http/in-problem    [:deep-think :where-did-I-go-wrong]
-             :http/in-failed     [:call-mum]
-             :http/in-cancelled  [:generic-cancelled]
-             :http/in-succeeded  [:yah! "fist-pump" :twice]
-             :http/in-done       [:so-tired-now]
+             :in-setup      [:my-setup]
+             :in-process    [:my-processor]
+             :in-problem    [:deep-think :where-did-I-go-wrong]
+             :in-failed     [:call-mum]
+             :in-cancelled  [:generic-cancelled]
+             :in-succeeded  [:yah! "fist-pump" :twice]
+             :in-done       [:so-tired-now]
              
              
-             :http/params     {:user     "Fred"
+             :params     {:user     "Fred"
                                :customer "big one"}
-             :http/headers    {"Authorization"  "Bearer QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+             :headers    {"Authorization"  "Bearer QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
                                "Cache-Control"  "no-cache"}
 
              ;; XXX describe this 
-             :http/content-type {#"application/.*json" :json
+             :content-type {#"application/.*json" :json
                                  #"application/edn"    :text}
 
              ;; Timeout
              ;; optional, by default request will run as long as browser implementation allows
-             :http/timeout       5000 
+             :timeout       5000
 
-             :http/credentials   "omit" ;; default is 'include'
-             :http/redirect      "manual" ;; default is 'follow'
-             :http/mode          "cors" ;; default is 'same-origin'
-             :http/cache         "no-store" ;; default is 'default' ref https://developer.mozilla.org/en-US/docs/Web/API/Request/cache
-             :http/referrer      "no-referrer" ;; default is 'client'
+             :credentials   "omit" ;; default is 'include'
+             :redirect      "manual" ;; default is 'follow'
+             :mode          "cors" ;; default is 'same-origin'
+             :cache         "no-store" ;; default is 'default' ref https://developer.mozilla.org/en-US/docs/Web/API/Request/cache
+             :referrer      "no-referrer" ;; default is 'client'
              
              ;; ref https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
-             :http/integrity     "sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE=" 
+             :integrity     "sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE="
 
              ;; NOTE: GET or HEAD cannot have body!
-             :http/body          String | js/ArrayBuffer | js/Blob | js/FormData | js/BufferSource | js/ReadableStream
+             :body          String | js/ArrayBuffer | js/Blob | js/FormData | js/BufferSource | js/ReadableStream
 
              ;; Optional: the path within `app-db` to which request related data should be put
              ;; See section in these docs called `path state`  for more details 
-             :http/path [:put :response :data :at :this :path :in :app-db]
+             :path [:put :response :data :at :this :path :in :app-db]
 
              ;; Optional: an area to put application-specific data 
              ;; If data is supplied here, it will probably be used later within the 
              ;; implementation of a "state handler". For example "description"
              ;; might be a useful string for displaying to the users in the UI or
              ;; to put in errors or logs.
-             :http/context {:max-retries  5
+             :context {:max-retries  5
                             :description  "Loading articles"}}))
 ----
 
-XXX add optional  `:http/cancel` event handler ??
+XXX add optional  `:cancel` event handler ??
 XXX add interceptor to assert correctness of the Logical State Handlers
 
 This specification offers a lot of flexibility. But we clearly don't 
@@ -317,26 +317,26 @@ with it certain specification values:
    :register-my-http-profile
    (fn [_ _]
 
-      {:http   {;; Notice the use of `:http/reg-profile`
+      {:http   {;; Notice the use of `:reg-profile`
                 ;; The value `:xyz` is the `id` of the profile being registered
-                ;; The special value of `:http/default` says that this profile
+                ;; The special value of `:default` says that this profile
                 ;; should be used for all requests, unless otherwise overridden.
                 ;; Clearly, you can register multiple profiles
                 
-                :http/reg-profile   :xyz
+                :reg-profile   :xyz
       
                 ;; the values we are capturing and associating with this profile 
-                :http/values {   
+                :values {
                               ;; compose the FSM
-                              :http/in-process    [:my-processor]
-                              :http/in-problem    [:generic-problem :extra "whatever"]
-                              :http/in-failed     [:my-special-failed]
-                              :http/in-cancelled  [:generic-cancelled]
-                              :http/in-done       [:generic-done]
+                              :in-process    [:my-processor]
+                              :in-problem    [:generic-problem :extra "whatever"]
+                              :in-failed     [:my-special-failed]
+                              :in-cancelled  [:generic-cancelled]
+                              :in-done       [:generic-done]
                               
-                              :http/timeout       3000
+                              :timeout       3000
                               
-                              :http/context  {:max-retries 2}}}}))               
+                              :context  {:max-retries 2}}}}))
 ----
 
 XXX Isaac are we using `default? true` approach?
@@ -347,30 +347,30 @@ XXX where do we talk about default.
 Here's an example of using that profile we registered above: 
 [source, Clojure]
 ----
-{:http {:http/get      "http://api.endpoint.com/articles/"
-        :http/path     [:put :response :data :at :this :path :in :app-db]
-        :http/profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE 
+{:http {:get      "http://api.endpoint.com/articles/"
+        :path     [:put :response :data :at :this :path :in :app-db]
+        :profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
 ----
 
-That key `:http/profiles` allows you to nominate a vector of previously registered `profile` `ids`. The data 
-(`:http/values`) associated with those profile  `ids` will be added in the request. 
+That key `:profiles` allows you to nominate a vector of previously registered `profile` `ids`. The data
+(`:values`) associated with those profile  `ids` will be added in the request.
 
 Here's another example use, but this time with multiple profile ids (a `vector` of them):
 [source, Clojure]
 ----
-{:http {:http/get      "http://api.endpoint.com/articles/"
-        :http/path     [:put :response :data :at :this :path :in :app-db]
-        :http/profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
+{:http {:get      "http://api.endpoint.com/articles/"
+        :path     [:put :response :data :at :this :path :in :app-db]
+        :profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
 ----
 
-The data in the `:http/values` for the nominated profiles will be composed to form the 
+The data in the `:values` for the nominated profiles will be composed to form the
 final `:http` specification. 
 
 But how? 
 
 === Composing Profiles
 
-When each profile holds a `:http/values` map and we must compose multiple of them - how should 
+When each profile holds a `:values` map and we must compose multiple of them - how should
 we "combine" the many maps into one, final map which is our `:http` specification?  
 
 The answer is to imagine a `reduce` across a seq of maps, using `merge`:
@@ -434,26 +434,26 @@ But when the profiles have overlapping keys it can be useful to take control abo
 (reg-event-fx
    :register-my-http-profile
    (fn [_ _]
-      {:http   {:http/reg-profile   :xyz
+      {:http   {:reg-profile   :xyz
       
                 ;; the values we are capturing and associating with this profile 
-                :http/values {   
+                :values {
                               ;; compose the FSM
-                              :http/in-process    [:my-processor]
-                              :http/in-problem    [:generic-problem :extra "whatever"]
-                              :http/in-failed     [:my-special-failed]
-                              :http/in-cancelled  [:generic-cancelled]
-                              :http/in-done       [:generic-done]
+                              :in-process    [:my-processor]
+                              :in-problem    [:generic-problem :extra "whatever"]
+                              :in-failed     [:my-special-failed]
+                              :in-cancelled  [:generic-cancelled]
+                              :in-done       [:generic-done]
                               
-                              :http/timeout       3000
+                              :timeout       3000
                               
-                              :http/context  {:max-retries 2}}}}))               
+                              :context  {:max-retries 2}}}}))
                 
                 ;; Optional, advanced feature.
                 ;; Profiles themselves can be combined/composed.
-                ;; In this section, you can specify how the `:http/values` in this 
+                ;; In this section, you can specify how the `:values` in this
                 ;; profile should be combined with the values of another profile. 
-                ;; For each potential key in `:http/values` provide you can provide a two argument 
+                ;; For each potential key in `:values` provide you can provide a two argument
                 ;; function to do the combining. 
                 ;; The two arguments given to this function will be:
                 ;;    (1) the value in "other" profile 
@@ -466,11 +466,11 @@ But when the profiles have overlapping keys it can be useful to take control abo
                 ;;    - `#(identity %2)` would cause the value in this profile
                 ;;      overwrite the value in the other profile. 
                 ;; 
-                :http/combine   {:http/params   merge
-                                 :http/get      str }}}))
+                :combine   {:params   merge
+                                 :get      str }}}))
 ----
 
-XXX is there a default "combiner" for each key in `:http/values`? 
+XXX is there a default "combiner" for each key in `:values`?
 XXX where is this documented?
 
 = About State
@@ -558,8 +558,8 @@ Recipes for each of the Logical State Handlers ...
 Overview: prepare the application for the pending HTTP request. 
 
 .Recipe:
-* establish initial `app-state` at the nominated `:http/path`
-* optionally, if the application is to allow th user to cancel the request (via a button?) then capture the `:http/id` of teh request and assoc it into `app-state` for easy access. 
+* establish initial `app-state` at the nominated `:path`
+* optionally, if the application is to allow th user to cancel the request (via a button?) then capture the `:id` of teh request and assoc it into `app-state` for easy access.
 * optionally, put up a twirly-busy-thing, perhaps with a description of the request: "Loading all the blah things", perhaps with a cancel button 
 * optionally, cause the application to change panel or view to be ready for the incoming response data. 
 * trigger `send` to cause the tranistion to `waiting`, with the `fetch` being an action associated with the transition. 
@@ -575,8 +575,8 @@ Example implementation:
 ----
 (fn [cofx event]
   (let [...]
-    {:http  {:http/trigger :XXX
-             :http/request request XXX}
+    {:http  {:trigger :XXX
+             :request request XXX}
      :db    (assoc-in (:db cofx) 
     }))
 ----
@@ -601,8 +601,8 @@ Example implementation
 ----
 (fn [cofx event]
   (let [...]
-    {:http/trigger :XXX
-     :http/request request 
+    {:trigger :XXX
+     :request request
     }))
 ----
 
@@ -619,8 +619,8 @@ Example implementation
 ----
 (fn [cofx event]
   (let [...]
-    {:http/trigger :XXX
-     :http/request request 
+    {:trigger :XXX
+     :request request
     }))
 ----
 
@@ -659,7 +659,7 @@ Perhaps fire another event?
 The request has failed and we must now adjust for that. 
 
 Ultimately, it doesn't actually matter why we are in the failed state, but to help give context, here's the sort of reasons we end up in this state:
-* no outright failure, but too many retries (see `:http/history` XXX for what happened)  
+* no outright failure, but too many retries (see `:history` XXX for what happened)
 * some kind of networking error happened which means the request never even got to the target server (CORS, DNS error?)
 * the server failed in some way (didn't return a 200) 
 * a 200 response was received but an error occurred when processing that response
