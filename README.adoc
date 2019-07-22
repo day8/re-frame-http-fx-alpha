@@ -439,8 +439,7 @@ But when the profiles have overlapping keys it can be useful to take control abo
       {:http   {:reg-profile   :xyz
       
                 ;; the values we are capturing and associating with this profile 
-                :values {
-                          ;; compose the FSM
+                :values {;; compose the FSM
                           :in-process    [:my-processor]
                           :in-problem    [:generic-problem :extra "whatever"]
                           :in-failed     [:my-special-failed]
@@ -577,11 +576,12 @@ Example implementation:
 ----
 (fn [cofx [_ request-state]]
   (let [db (:db cofx)
-        {:keys [request-id context]} request-state]
+        {:keys [request-id context]} request-state
+        path (:path context)]
     {:http  {:trigger :fetch
              :request-id request-id}
      :db    (-> db
-              (assoc-in (conj (:path context) :request-id) request-id)
+              (assoc-in (conj path :request-id) request-id)
               (assoc-in [:global :loading?] true)
               (assoc-in [:global :loading-text] (:loading-text context)))}))
 ----
@@ -602,7 +602,7 @@ browser.
 .Recipe:
 * Process the response: turn transit JSON into transit or 
 * store in app
-* trigger `processed`
+* FSM trigger `processed`
 
 Example implementation
 [source, Clojure]
@@ -630,7 +630,7 @@ Example implementation
 The processing of the response has succeeded.
 
 .Recipe:
-* trigger `XXX`
+* FSM trigger `:done`
 
 Example implementation
 [source, Clojure]
@@ -645,7 +645,7 @@ Example implementation
 
 .Recipe:
 * decide what to do about the problem - retry or give up? 
-* trigger `fail` or `retry`
+* FSM trigger `:fail` or `:fetch`
 
 Example implementation:
 [source, Clojure]
@@ -694,7 +694,7 @@ Ultimately, it doesn't actually matter why we are in the failed state, but to he
 * log the error
 * show the error to the user
 * put the application back into a sane state
-* trigger `done`
+* FSM trigger `:done`
 
 Example implementation:
 [source, Clojure]
@@ -717,7 +717,7 @@ This state follows user cancellation.
 * put the application into a state consistent with the cancellation. What does
 the user see? What can they do next?
 * update `app-state`, maybe. 
-* trigger `done`
+* FSM trigger `:done`
 
 Example implementation:
 [source, Clojure]
@@ -745,7 +745,7 @@ As a result, in this state we handle any actions which have to happen irrespecti
   * change `:loading?` to false
 * possible updates to `app-db` 
   * busy twirly removal
-* fsm trigger `destroy`
+* FSM trigger `:destroy`
 
 Example implementation:
 [source, Clojure]
