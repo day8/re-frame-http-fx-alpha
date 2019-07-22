@@ -33,7 +33,7 @@ This library has two goals:
   1. proper treatment for failure paths (robustness and a better user experience)
   2. you write less code for each request (no repetition or fragile boilerplate)
 
-These two goals would normally pull in opposite directions but this library liberates you from the horns of this dilemma, and seeks to let you have your cake and eat it too. In fact, maybe even eat it twice.  But no chocolate sprinkles - we're not monsters.
+These two goals would normally pull in opposite directions but this library liberates you from the horns of this dilemma, and seeks to let you have your cake and eat it too. In fact, maybe even eat it twice.  But no chocolate sprinkles. We're not monsters.
 
 == An Indicative Code Fragment 
 
@@ -468,24 +468,34 @@ For example:
 * design `app-state` and the views which render it (or simply use the default design suggested)
 * write your Logical State Handlers (or simply use the default handlers provided)
 
-
 The Logical State Handlers have responsibility for mirroring a view of `request-state` across into `app-state`. 
 
 Recipes for each of the Logical State Handlers ... 
 
 === in-setup
 
-Initialize `app-state` for this request. Views subscribed to this state will 
-then render the UI, allowing the user to see feedback. 
+Initialize `app-state` for this request.
 
-XXX coincidently, a panel might change .... perhaps the user clicked a button to "view foobars", so the application will change panels to the foobars one, AND also kickoff the request to get the foobars. 
+Views subscribed to this `app-state` will 
+then render the UI, probably locking it up and allowing the user to see that a request is in-flight.
 
-.Do this:
+XXX a panel might change .... perhaps the user clicked a button to "View Inappropriate", so the application will change panels to the inappropriates one (via a change in `app-db` state), AND also kickoff a server request to get the "inappropriates".
+
+.Recipy:
 * establish initial `app-state` at the nominated path 
 * obtain the id of the request, and store it in `app-state` so it can be used later when the user clicks the "cancel" button. 
 * optionally, put up a twirly-busy-thing, perhaps with a description of the request: "Loading all the blah things", perhaps with a cancel button 
 * FSM: trigger `send`
 
+Example implementation
+[source, Clojure]
+----
+(fn [cofx event]
+  (let [...]
+    {:http/trigger :XXX
+     :http/request request 
+    }))
+----
 
 === in-waiting
 
@@ -495,15 +505,37 @@ In this state, we are waiting for an HTTP response (after the `fetch` is launche
 
 When the response arrives and it is a 200 HTTP status, then do some initial processing of the response. Use the mime-type to XXX. 
 
+.Recipy:
 * process the response to determine what's happened. 
 * be careful when doing the initial processing, because, for example, the JSON might have been corrupted. You might get a 200 response but not be able to read the JSON payload. 
 * triggers either `timeout` or `success`, `unsuccessful`
-  
+
+Example implementation
+[source, Clojure]
+----
+(fn [cofx event]
+  (let [...]
+    {:http/trigger :XXX
+     :http/request request 
+    }))
+----
+
+
 === in-processing
 
 * Process the response: turn transit JSON into transit or 
 * store in app
 * trigger `processed`
+
+Example implementation
+[source, Clojure]
+----
+(fn [cofx event]
+  (let [...]
+    {:http/trigger :XXX
+     :http/request request 
+    }))
+----
 
 
 === in-succeeded
@@ -522,8 +554,7 @@ Perhaps fire another event?
 * trigger `fail` or `retry`
 
 
-taxonomy of Problems:
-
+.XXX we need a full taxonomy of problems here:
 * network connection error - no response - retry-able (except that DNS issues take a long time, so retires are annoying)
 * cross-site scripting whereby access is denied; or
 * requesting a URI that is unreachable (typo, DNS issues, invalid hostname etc); or
