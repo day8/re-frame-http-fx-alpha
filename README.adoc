@@ -7,8 +7,9 @@
 :toc:
 :icons: font
 
-> This library is under development. + 
-> We're interested in your ideas or critique. Please open an issue. Or tweet me @wazound
+> This library is under development, so don't try to use it yet. + 
+> But this README/tutorial is getting close to being finished. It says how the library will work. + 
+> Have a read and give us your any ideas or critique you have. Or, more causually, tweet me @wazound
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
