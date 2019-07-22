@@ -47,7 +47,7 @@
 
 (defn request->js-init
   "Returns an init options js/Object to use as the second argument to js/fetch."
-  [{:http/keys [method headers body mode credentials cache redirect referrer integrity] :as request}
+  [{:keys [method headers body mode credentials cache redirect referrer integrity] :as request}
    controller]
   (let [mode (or mode "same-origin")
         credentials (or credentials "include")
@@ -57,7 +57,7 @@
            ;; aborted.
            :signal      (.-signal controller)
 
-           ;; There is always a method, as dispatch is via sub-effects like :http/get.
+           ;; There is always a method, as dispatch is via sub-effects like :get.
            :method      method
 
            ;; Although the below keys are usually optional, the default between
@@ -103,20 +103,20 @@
 (defn js-response->clj
   "Returns a new ClojureScript map of the js/Response JavaScript object."
   [js-response]
-  {:http/url         (.-url js-response)
-   :http/ok?         (.-ok js-response)
-   :http/redirected? (.-redirected js-response)
-   :http/status      (.-status js-response)
-   :http/status-text (.-statusText js-response)
-   :http/type        (.-type js-response)
-   :http/final-uri?  (.-useFinalURL js-response)
-   :http/headers     (js-headers->clj (.-headers js-response))})
+  {:url         (.-url js-response)
+   :ok?         (.-ok js-response)
+   :redirected? (.-redirected js-response)
+   :status      (.-status js-response)
+   :status-text (.-statusText js-response)
+   :type        (.-type js-response)
+   :final-uri?  (.-useFinalURL js-response)
+   :headers     (js-headers->clj (.-headers js-response))})
 
 (defn response->reader
   "Returns a keyword of the type of reader to use for the body of the
    response according to the Content-Type header."
-  [{:http/keys [content-types]} response]
-  (let [content-type (get-in response [:http/headers :content-type] "text/plain")]
+  [{:keys [content-types]} response]
+  (let [content-type (get-in response [:headers :content-type] "text/plain")]
     (reduce-kv
       (fn [ret pattern reader]
         (if (or (and (string? pattern) (= content-type pattern))
@@ -144,8 +144,8 @@
 
 (def sub-effects
   "The set of supported sub-effects."
-  #{:http/get :http/head :http/options :http/post :http/put :http/delete
-    :http/transition :http/reg-profile :http/unreg-profile :http/abort})
+  #{:get :head :options :post :put :delete
+    :transition :reg-profile :unreg-profile :abort})
 
 (defn sub-effect-dispatch
   "Returns the sub-effect key in m if exactly one exists, otherwise an error
@@ -176,8 +176,8 @@
   (atom {}))
 
 (defn profile-swap-fn
-  [current {profile-id :http/reg-profile
-            default?   :http/default?
+  [current {profile-id :reg-profile
+            default?   :default?
             :as        profile}]
   (cond-> current
           ;; Store default? profile-id as
@@ -191,12 +191,12 @@
           :always
           (assoc profile-id profile)))
 
-(defmethod sub-effect :http/reg-profile
+(defmethod sub-effect :reg-profile
   [profile]
   (swap! profile-id->profile profile-swap-fn profile))
 
-(defmethod sub-effect :http/unreg-profile
-  [{profile-id :http/unreg-profile}]
+(defmethod sub-effect :unreg-profile
+  [{profile-id :unreg-profile}]
   (swap! profile-id->profile #(dissoc %1 %2) profile-id))
 
 (defn get-profile
@@ -226,7 +226,7 @@
   "Returns a new map with the seq-of-profile-maps 'added' to the sub-effect map."
   [m seq-of-profile-maps]
   (reduce
-    (fn [acc {:http/keys [combine values]}]
+    (fn [acc {:keys [combine values]}]
       (reduce-kv
         (fn [foo k f]
           (let [existing (get acc k)
@@ -239,7 +239,7 @@
 
 (defn m+profiles
   ""
-  [{:http/keys [profiles] :as m}]
+  [{:keys [profiles] :as m}]
   (->> profiles
       (get-profiles)
       (conj-profiles m)))
@@ -249,10 +249,10 @@
 (defmethod sub-effect :failure/missing-sub-effect
   [m]
   (let [m' (m+profiles m)
-        {:http/keys [in-failure]} m'
-        err {:http/failure :invalid
-             :http/reason :missing-sub-effect
-             :http/debug-message "invalid effect map contains no sub-effect key."}]
+        {:keys [in-failure]} m'
+        err {:failure :invalid
+             :reason :missing-sub-effect
+             :debug-message "invalid effect map contains no sub-effect key."}]
     (if in-failure
       (dispatch (conj in-failure nil nil err))
       (console :error "http fx: no in-failure event handler exists to handle this error: " err))))
@@ -260,10 +260,10 @@
 (defmethod sub-effect :failure/multiple-sub-effects
   [m]
   (let [m' (m+profiles m)
-        {:http/keys [in-failure]} m'
-        err {:http/failure :invalid
-             :http/reason :multiple-sub-effects
-             :http/debug-message "invalid sub-effect map contains multiple sub-effect keys."}]
+        {:keys [in-failure]} m'
+        err {:failure :invalid
+             :reason :multiple-sub-effects
+             :debug-message "invalid sub-effect map contains multiple sub-effect keys."}]
     (if in-failure
       (dispatch (conj in-failure nil nil err))
       (console :error "http fx: no in-failure event handler exists to handle this error: " err))))
@@ -274,7 +274,7 @@
 (def request-id->request-and-controller
   "An Atom that contains a mapping of request-ids to requests and their
    associated js/AbortController; i.e.,
-   {:http-123 {::request #:http {:state :waiting :method... }
+   {:http-123 {::request {:state :waiting :method... }
                ::js-controller js/AbortController}}"
   (atom {}))
 
@@ -291,13 +291,13 @@
 
 (def fsm->event-keys
   "A mapping of states to the event handler to dispatch in that state."
-  {:waiting    :http/in-wait
-   :problem    :http/in-problem
-   :processing :http/in-process
-   :cancelled  :http/in-cancelled
-   :failed     :http/in-failed
-   :succeeded  :http/in-succeeded
-   :done       :http/in-done})
+  {:waiting    :in-wait
+   :problem    :in-problem
+   :processing :in-process
+   :cancelled  :in-cancelled
+   :failed     :in-failed
+   :succeeded  :in-succeeded
+   :done       :in-done})
 
 (defn fsm-swap-fn
   "In current value of request-id->request-and-controller moves state of request
@@ -305,17 +305,17 @@
    state to :failed."
   [current request-id to-state]
   (let [{::keys [request]} (get current request-id)
-        {from-state :http/state} request
+        {from-state :state} request
         valid-to-state? (get fsm from-state #{})]
     (if (valid-to-state? to-state)
       (cond-> current
               (= to-state :cancelled)
               (assoc-in [request-id ::js-controller] nil)
               :always
-              (assoc-in [request-id ::request :http/state] to-state))
+              (assoc-in [request-id ::request :state] to-state))
       (update-in current [request-id ::request] assoc
-                 :http/state :failed
-                 :http/failure :fsm))))
+                 :state :failed
+                 :failure :fsm))))
 
 ;; TODO handle undefined event handler(s); default event handlers
 
@@ -328,12 +328,12 @@
   ([request-id to-state response]
    (fsm->! request-id to-state response nil))
   ([request-id to-state response error]
-   (let [[_ {{{:http/keys [state] :as request} ::request
+   (let [[_ {{{:keys [state] :as request} ::request
               js-controller                    ::js-controller} request-id}]
          (swap-vals! request-id->request-and-controller
                      fsm-swap-fn request-id to-state)
          event-key (get fsm->event-keys state)
-         event (or (get request event-key) [:http/no-handler])
+         event (or (get request event-key) [:no-handler])
          event' (conj event request response error)]
      (when (= :cancelled state)
        (.abort js-controller))
@@ -345,16 +345,16 @@
   [request-id response reader js-body]
   (let [body (if (= :json reader) (js->clj js-body :keywordize-keys true) js-body)
         response' (assoc response :body body)]
-    (if (:http/ok? response')
+    (if (:ok? response')
       (fsm->! request-id :processing response')
-      (fsm->! request-id :problem response' {:http/problem :server}))))
+      (fsm->! request-id :problem response' {:problem :server}))))
 
 (defn body-failed-handler
   "Dispatches the request with request-id and the associated response to the
    in-failed event handler due to a failure reading the body. Returns nil."
   [request-id response reader js-error]
   ;(console :error js-error)
-  (fsm->! request-id :failed response {:http/problem :body}))
+  (fsm->! request-id :failed response {:problem :body}))
 
 (defn response-handler
   "Reads the js/Response JavaScript object stream, that is associated with the
@@ -375,17 +375,17 @@
 (defn problem-handler
   [request-id js-error]
   ;;(console :error js-error)
-  (fsm->! request-id :problem nil {:http/problem js-error}))
+  (fsm->! request-id :problem nil {:problem js-error}))
 
 (defn fetch
   "Initiate the request. Returns nil."
-  [{:http/keys [url params timeout] :as request}]
+  [{:keys [url params timeout] :as request}]
   (let [request-id (keyword (gensym "http-"))
         url' (str url (params->str params))
         request' (-> request
-                     (merge #:http {:request-id request-id
-                                    :url        url'
-                                    :state      :requested})
+                     (merge {:request-id request-id
+                             :url        url'
+                             :state      :requested})
                      (m+profiles))
         controller (js/AbortController.)]
     (swap! request-id->request-and-controller
@@ -399,45 +399,45 @@
         (.catch (partial problem-handler request-id)))
     nil))
 
-(defmethod sub-effect :http/get
-  [{url :http/get :as request}]
-  (fetch (merge request #:http {:method "GET" :url url})))
+(defmethod sub-effect :get
+  [{url :get :as request}]
+  (fetch (merge request {:method "GET" :url url})))
 
-(defmethod sub-effect :http/head
-  [{url :http/head :as request}]
-  (fetch (merge request #:http {:method "HEAD" :url url})))
+(defmethod sub-effect :head
+  [{url :head :as request}]
+  (fetch (merge request {:method "HEAD" :url url})))
 
-(defmethod sub-effect :http/post
-  [{url :http/post :as request}]
-  (fetch (merge request #:http {:method "POST" :url url})))
+(defmethod sub-effect :post
+  [{url :post :as request}]
+  (fetch (merge request {:method "POST" :url url})))
 
-(defmethod sub-effect :http/put
-  [{url :http/put :as request}]
-  (fetch (merge request #:http {:method "PUT" :url url})))
+(defmethod sub-effect :put
+  [{url :put :as request}]
+  (fetch (merge request {:method "PUT" :url url})))
 
-(defmethod sub-effect :http/delete
-  [{url :http/delete :as request}]
-  (fetch (merge request #:http {:method "DELETE" :url url})))
+(defmethod sub-effect :delete
+  [{url :delete :as request}]
+  (fetch (merge request {:method "DELETE" :url url})))
 
-(defmethod sub-effect :http/options
-  [{url :http/options :as request}]
-  (fetch (merge request #:http {:method "OPTIONS" :url url})))
+(defmethod sub-effect :options
+  [{url :options :as request}]
+  (fetch (merge request {:method "OPTIONS" :url url})))
 
-(defmethod sub-effect :http/transition
-  [{to-state                  :http/transition
-    {:http/keys [request-id]} :http/request}]
+(defmethod sub-effect :transition
+  [{to-state                  :transition
+    {:keys [request-id]} :request}]
   (fsm->! request-id to-state))
 
 ;; Abort
 ;; =============================================================================
 
-(defmethod sub-effect :http/abort
-  [{request-id :http/abort}]
+(defmethod sub-effect :abort
+  [{request-id :abort}]
   (fsm->! request-id :cancelled))
 
 (defn abort-event-handler
   "Generic HTTP abort event handler."
   [_ [_ request-id]]
-  {:http #:http {:abort request-id}})
+  {:http {:abort request-id}})
 
-(reg-event-fx :http/abort abort-event-handler)
+(reg-event-fx :abort abort-event-handler)
