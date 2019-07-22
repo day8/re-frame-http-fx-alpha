@@ -462,9 +462,9 @@ For example:
     (thus taking down the twirly). 
     
     
-= Recipes 
+= State Hander Recipes 
 
-.To use this library, you must:
+.To use this library, you'll:
 * design `app-state` and the views which render it (or simply use the default design suggested)
 * write your Logical State Handlers (or simply use the default handlers provided)
 
@@ -481,21 +481,24 @@ then render the UI, probably locking it up and allowing the user to see that a r
 
 XXX a panel might change .... perhaps the user clicked a button to "View Inappropriate", so the application will change panels to the inappropriates one (via a change in `app-db` state), AND also kickoff a server request to get the "inappropriates".
 
-.Recipy:
-* establish initial `app-state` at the nominated path 
-* obtain the id of the request, and store it in `app-state` so it can be used later when the user clicks the "cancel" button. 
+.Recipe:
+* establish initial `app-state` at the nominated `:http/path`
+* optionally, if the application is to allow th user to cancel the request (via a button?) then capture the `:http/id` of teh request and assoc it into `app-state` for easy access. 
 * optionally, put up a twirly-busy-thing, perhaps with a description of the request: "Loading all the blah things", perhaps with a cancel button 
-* FSM: trigger `send`
+* optionally, cause the application to change panel or view to be ready for the incoming response data. 
+* trigger `send` to cause the tranistion to `in-waiting`, with the `fetch` being the tranistions associated action. 
 
-Example implementation
+Example implementation:
 [source, Clojure]
 ----
 (fn [cofx event]
   (let [...]
-    {:http/trigger :XXX
-     :http/request request 
+    {:http  {:http/trigger :XXX
+             :http/request request XXX}
+     :db    (assoc-in (:db cofx) 
     }))
 ----
+
 
 === in-waiting
 
@@ -505,7 +508,7 @@ In this state, we are waiting for an HTTP response (after the `fetch` is launche
 
 When the response arrives and it is a 200 HTTP status, then do some initial processing of the response. Use the mime-type to XXX. 
 
-.Recipy:
+.Recipe:
 * process the response to determine what's happened. 
 * be careful when doing the initial processing, because, for example, the JSON might have been corrupted. You might get a 200 response but not be able to read the JSON payload. 
 * triggers either `timeout` or `success`, `unsuccessful`
@@ -523,6 +526,7 @@ Example implementation
 
 === in-processing
 
+.Recipe:
 * Process the response: turn transit JSON into transit or 
 * store in app
 * trigger `processed`
@@ -550,6 +554,7 @@ Perhaps fire another event?
 
 === in-problem
 
+.Recipe:
 * decide what to do about the problem - retry or give up? 
 * trigger `fail` or `retry`
 
@@ -577,7 +582,7 @@ Ultimately, it doesn't actually matter why we are in the failed state, but to he
 * a 200 response was received but an error occurred when processing that response
 
 
-.Recipy
+.Recipe:
 * log the error
 * show the error to the user
 * 
@@ -589,6 +594,7 @@ Ultimately, it doesn't actually matter why we are in the failed state, but to he
 
 This state follows user cancellation. 
 
+.Recipe:
 * put the application into a state consistent with the cancellation. What does the user see? What can they do next. 
 * update `app-state`, maybe. 
 * trigger `done`
@@ -599,6 +605,7 @@ Irrespective of the outcome of the request (success, cancellation or failure), t
 
 As a result, in this state we handle any actions which have to happen irrespective of the outcome.
 
+.Recipe:
 * take down the twirly 
 * accumulate and log final stats 
 * possible updates to `app-state`
