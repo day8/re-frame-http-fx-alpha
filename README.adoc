@@ -410,7 +410,7 @@ There are two kinds of State:
    state of the FSM, the original request, current number of retries, a trace history through
    the FSM including timings, etc. 
 
-   XXX issac where is this state? Currently stored in an atom help within the library. But 
+   XXX Issac where is this state? Currently stored in an atom held within the library. But, 
    it is all data and it could be put into `app-db` at a library-specific path? 
 
 * `app-state` - this is the application state which represents the request (not the library's state). 
@@ -440,7 +440,7 @@ An example of the `app-state` map.
 
 This is the data in `app-db` which some view functions might subscribe to, in order to render the UI
 
-XXX To avoid race conditions should the booleans be false in absence.  Eg: use `completed?` instead of `loading?` because "absence" (a nil) correctly matches the predacate's negative value. 
+XXX To avoid race conditions should the booleans be false in absence via subscriptions?  Eg: use `completed?` instead of `loading?` because "absence" (a nil) correctly matches the predacate's negative value. 
 
 XXX consider what else needs to happen to help `re-frame-async-flow`
 
