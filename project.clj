@@ -2,7 +2,7 @@
   :description  "A re-frame effects handler for fetching resources (including across the network)."
   :url          "https://github.com/Day8/re-frame-http-fx-2.git"
   :license      {:name "MIT"}
-  :dependencies [[thheller/shadow-cljs       "2.8.40" :scope "provided"]
+  :dependencies [[thheller/shadow-cljs       "2.8.41" :scope "provided"]
                  [org.clojure/clojure        "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript  "1.10.520" :scope "provided"]
                  [re-frame                   "0.10.8" :scope "provided"]]
