@@ -343,18 +343,15 @@ Also, remember that `merge` is shallow. Consider:
 ----
 You might be tempted to think the result should be
 `{a: {:aa 1 :cc 1}}`
-bBut it is actually: `{a: {:cc 1}}`. 
+but it is actually: `{a: {:cc 1}}`. 
 
 The `:a` value in `map2`, which is `{:cc 1}`, simply replaces **completely** the earlier value of `{:aa 1}`. The values `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recursively on the map values themselves.
 
 == Beyond Default `merge` Behaviour
 
-Often, this default `merge` behaviour is often good enough, particularly when combining profiles with disjoint keys. 
+Often, this default `merge` behaviour is good enough, particularly when the profiles have disjoint keys. 
 
-But, sometimes, when profiles have overlapping keys it is useful to take control about how the `values` 
-are combined. 
-
-This library lets you take change of the combining process for each potential key in XXX more here.
+But when the profiles have overlapping keys it can be useful to take control about how map `values` are combined. 
 
 [source, Clojure]
 ----
@@ -379,8 +376,8 @@ This library lets you take change of the combining process for each potential ke
                 ;; Optional, advanced feature.
                 ;; Profiles themselves can be combined/composed.
                 ;; In this section, you can specify how the `:http/values` in this 
-                ;; profile should be combined with the values in other profile. 
-                ;; For each key in `:http/values` provide you can provide a two argument 
+                ;; profile should be combined with the values of another profile. 
+                ;; For each potential key in `:http/values` provide you can provide a two argument 
                 ;; function to do the combining. 
                 ;; The two arguments given to this function will be:
                 ;;    (1) the value in "other" profile 
@@ -396,6 +393,9 @@ This library lets you take change of the combining process for each potential ke
                 :http/combine   {:http/params   merge
                                  :http/get      str }}}))
 ----
+
+XXX is there a default "combiner" for each key in `:http/values`? 
+XXX where is this documented?
 
 = About State
 
