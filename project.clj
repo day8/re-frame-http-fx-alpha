@@ -20,6 +20,8 @@
 
   :test-paths     ["test"]
 
+  :aliases {"dev" ["with-profile" "dev" "run" "-m" "shadow.cljs.devtools.cli" "watch" "browser-test"]}
+
   :deploy-repositories [["clojars" {:sign-releases false
                                     :url "https://clojars.org/repo"
                                     :username :env/CLOJARS_USERNAME
