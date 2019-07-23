@@ -346,6 +346,17 @@ Here's an example of using that profile we registered above:
 [source, Clojure]
 ----
 {:http {:get      "http://api.endpoint.com/articles/"
+        :path     [:put :response :data :at :this :path :in :app-db]}
+----
+Wait! Where? Where is it used?
+
+If you look back, you'll see the profile was registered with `:default? true` and 
+that means it will be used by default, if no profile is explicitly provided. 
+
+Here's an explicit example of using that profile we registered above:
+[source, Clojure]
+----
+{:http {:get      "http://api.endpoint.com/articles/"
         :path     [:put :response :data :at :this :path :in :app-db]
         :profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
 ----
@@ -364,7 +375,7 @@ Here's another example use, but this time with multiple profile ids (a `vector` 
 The data in the `:values` for the nominated profiles will be composed to form the
 final `:http` specification. 
 
-But how? 
+NOTE: Using `:profiles []` would mean no profiles, even if one of them has `:default true`. 
 
 === Composing Profiles
 
@@ -482,19 +493,21 @@ There are two kinds of State:
    id, the current logical state of the FSM, the original request, current
    number of retries, a trace history through the FSM including timings, etc.
    This state is stored internally in the library and provided in the event
-   vector to *_Logical State Handlers_*.
+   vector to *_Logical State Handlers_* for read-only purposes.
 
 * `app-state` - this is the application state which represents the request (not
    the library's state). It is a small map of values which exists at a
    particular path within `app-db` and the contents of this map is up to you,
    the writer of the application. It will be created and maintained by the
-   *_Logical State Handlers_* you write and it will always be "a materialised
+   *_Logical State Handlers_* you write and it will be "a materialised
    view" of the full `request-state`.
   
-XXX better names? Maybe `lib-state` and `app-state`. Not keen on `app-state`.  `your-state`  `ui-state`
+XXX better names? Maybe `lib-state` and `app-state`. Not keen on `app-state`.  Maybe `your-state`  `ui-state`
   
-Typically, the `in-setup` state handler initialises this map, and it is 
-then updated across the request handling process by the various FSM handlers. 
+Typically, the `in-setup` LogicalStateHandler initialises the `app-state` map, and it is 
+then maintained across the request handling process by the various FSM handlers. Ultimately, it
+will contain the response data or an error. Your views will be susbscribed to this map and will 
+render it appropriately. 
 
 An example of the `app-state` map. 
 [source, Clojure]
@@ -502,20 +515,24 @@ An example of the `app-state` map.
 {
   :request-id  123456
   :loading?    true
-  :error?      nil or "Something bad happened"
+
   :result      nil
   :retries     0
   :cancelled?  false
   :description "Loading filtered thingos"
+  
+  :error?      true
+  :error-description "Something bad happened"
 }
 ----
 
-This is the data in `app-db` which some view functions might subscribe to, in
-order to render the UI
+Remember, you design this map.  You initialise it in `in-setup`. You update it to reflect the state of the ongoing request. You create the subscriptions which deliver it to a view, and that view will render it. 
+
+Note: none of this precludes you, for example, writing errors to a different place within app-db.  You write the LogicalStatehandlers. Your choice about how data flows into `app-db`. The proposal above is just one way to do it.
 
 XXX To avoid race conditions, should the booleans be false in absence via subscriptions?  Eg: use `completed?` instead of `loading?` because "absence" (a nil) correctly matches the predicate's negative value. 
 
-XXX consider what else needs to happen to help `re-frame-async-flow`
+XXX consider what else needs to happen to work well with `re-frame-async-flow`
 
 So, I'd like to stress two points already made:
    - lifetime: `app-state` exists for as long as your application code says it should - it persists. Whereas 
@@ -542,11 +559,9 @@ For example:
 
 .To use this library, you'll:
 * design `app-state` and the views which render it (or simply use the default design suggested)
-* implement your Logical State Handlers (or simply use the default handlers provided)
+* implement your Logical State Handlers (or simply use the default Handlers provided)
 
-The Logical State Handlers you write are about "executing the behaviour" associated with being _*in_* a particular state within the FSM. They implement behaviour for one part of "the machine".
-
-The Logical State Handlers have responsibility for mirroring a view of `request-state` across into `app-state`.
+The Logical State Handlers you write are about "executing the behaviour" associated with being *_in_* a particular state within the FSM. They implement behaviour for one part of "the machine".
 
 Recipes for each of the Logical State Handlers ... 
 
@@ -558,13 +573,12 @@ Overview: prepare the application for the pending HTTP request.
 * establish initial `app-state` at the nominated `:path`
 * optionally, if the application is to allow the user to cancel the request
 (e.g., via a button) then capture the `:request-id` of the request and assoc it
-into `app-state` for easy access.
+into `app-state` for access within the view (which will dispatch a cancel request event with this id supplied).
 * optionally, put up a twirly-busy-thing, perhaps with a description of the
-request: "Loading all the blah things", probably with a cancel button
+request: "Loading all the blah things", perhaps with a cancel button
 * optionally, cause the application to change panel or view to be ready for the
 incoming response data.
-* trigger `:send` to cause the transition to `waiting`, with the `:send` being
-an action associated with the transition.
+* trigger `:send` to cause the transition to `waiting` state. The transition will cause the `fetch` action which actually initiates the request.
 
 
 Views subscribed to this `app-state` will then render the UI, probably locking
@@ -577,8 +591,12 @@ Example implementation:
 ----
 (fn [{:keys [db] :as cofx} [_ {:keys [request-id context] :as request-state}]]
   (let [path (:path context)]
+    ;; trigger for state transition
     {:http  {:trigger :send
              :request-id request-id}
+     ;; Initialise app-db to reflect that a request is now inflight
+     ;; This might mean updating some "global" place in app-db to get a twirly-busy-thing up 
+     ;; This might mean putting an "map" at the path provided in the request
      :db    (-> db
               (assoc-in (conj path :request-id) request-id)
               (assoc-in [:global :loading?] true)
@@ -593,15 +611,14 @@ This State Handler is unique because it is the only one you can't write. It is
 provided by this library.
 
 In this state, we are waiting for an HTTP response (after the `fetch` is
-launched) and any subsequent initial processing of the response body by the
-browser.
+launched) and then doing the first round of processing of the response body.
 
 === in-processing
 
 .Recipe:
-* Process the response: turn transit JSON into transit or 
-* store in app
-* FSM trigger `processed`
+* Process the response: turn transit JSON into transit or XXX
+* store in `app-db`
+* FSM trigger `:processed` or `:processing-error`
 
 Example implementation
 [source, Clojure]
@@ -616,10 +633,12 @@ Example implementation
                 :request-id request-id}}))
       (catch js/Error e
         {:db   (-> db
-                 (assoc-in (conj path :error) :transit-reader))
-         :http {:trigger :fail
+                 (assoc-in (conj path :error) (str e)))
+         :http {:trigger :processing-error
                 :request-id request-id}})))
 ----
+
+XXX `:processing-error` causes a transition to `failed`. How and where does this state obtain the error details? 
 
 === in-succeeded
 
