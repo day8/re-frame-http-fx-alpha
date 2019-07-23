@@ -341,7 +341,7 @@
    (fsm->! request-id to-state response nil))
   ([request-id to-state response error]
    (let [[_ {{{:keys [state] :as request} ::request
-              js-controller                    ::js-controller} request-id}]
+              js-controller               ::js-controller} request-id}]
          (swap-vals! request-id->request-and-controller
                      fsm-swap-fn request-id to-state)
          event-key (get fsm->event-keys state)
