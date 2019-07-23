@@ -217,9 +217,10 @@ Earlier, we saw this code:
 
 It uses an effect `:http` to initiate an HTTP GET request. 
 
-That code was very terse. To enhance your understanding of `:http`, let's now
-pendulum to the opposite extreme and show you *_the most verbose_* use of the
-`:http` effect handler:
+Who doesn't love terse? But, as a learning exercise, 
+let's pendulum to the opposite extreme 
+and show you *_the most verbose_* use of the
+`:http` effect:
 [source, Clojure]
 ----
 (reg-event-fx
@@ -267,7 +268,7 @@ pendulum to the opposite extreme and show you *_the most verbose_* use of the
              ;; ref https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
              :integrity     "sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE="
 
-             ;; NOTE: GET or HEAD cannot have body!
+             ;; NOTE: GET or HEAD cannot have body!  XXX
              :body          String | js/ArrayBuffer | js/Blob | js/FormData | js/BufferSource | js/ReadableStream
 
              ;; Optional: the path within `app-db` to which request related data should be put
@@ -283,8 +284,8 @@ pendulum to the opposite extreme and show you *_the most verbose_* use of the
                             :description  "Loading articles"}}))
 ----
 
-XXX add optional  `:cancel` event handler ??
-XXX add an interceptor to assert the correctness of the Logical State Handlers
+XXX add optional  `:cancel` event handler ?? + 
+XXX add an interceptor to assert the correctness of the Logical State Handlers + 
 
 This specification offers a lot of flexibility. But we clearly don't want to repeat this much every time. Mainly because, time after time,
 we'll likely want the same headers, params and `Logical State handers`.
@@ -466,8 +467,8 @@ But when the profiles have overlapping keys it can be useful to take control of 
                             :get      str}}}))
 ----
 
-XXX is there a default "combiner" for each key in `:values`?
-XXX where is this documented?
+XXX is there a default "combiner" for each key in `:values`? + 
+XXX where is this documented? + 
 
 = About State
 
