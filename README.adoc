@@ -8,9 +8,9 @@
 :icons: font
 
 > This library is under development, so don't try to use it yet. + 
-> But this README/tutorial is almost done and it explains how it will work. + 
+> But this README/tutorial is almost done, and it explains how it will work. + 
 > Please have a read and give us your ideas or critique. Or,
-> more causually, tweet me @wazound
+> more casually, tweet me @wazound
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
@@ -23,13 +23,13 @@ A re-frame library for performing HTTP requests using an effect with key `:http`
 
 HTTP requests are simple, right?
 
-You send off a request, you get back a response and you store it in `app-db`.
+You send off a request, you get back a response, and you store it in `app-db`.
 Done.
 
 Except, of course, _**requests are anything but simple**_.  There is a happy
 path, yes, but it winds through a deceptively dense briar thicket of fiddly
 issues. Coding for unreliable servers and unreliable networks using an async
-flow of control is hard enough by itself, what with the multiple failure paths
+flow of control is hard enough, what with the multiple failure paths
 and possible retries but, on top of that, there's also the
 *_cross-cutting issues_* of managing UI updates, user-initiated cancellations,
 error recovery, logging, statistics gathering, etc. There's a bit going on.
@@ -44,8 +44,8 @@ This library has two goals:
   1. proper treatment for failure paths (robustness and a better user experience)
   2. you write less code for each request (no repetition or fragile boilerplate)
 
-These two goals would normally pull in opposite directions but this library
-liberates you from the horns of this dilemma, and seeks to let you have your
+These two goals would typically pull in opposite directions, but this library
+liberates you from the horns of this dilemma and seeks to let you have your
 cake and eat it too. In fact, maybe even eat it twice.  But no chocolate
 sprinkles. We're not monsters.
 
@@ -66,13 +66,13 @@ Here's a re-frame event handler returning an effect keyed `:http`.
 
 That `:http` effect will GET from the given URL and place any response data into
 `app-db` at the given path. The request will be retried on timeouts, and 503
-failure, etc. Logs will be written, errors will be reported and interesting
+failure, etc. Logs will be written, errors will be reported, and interesting
 statistics will be captured. The user will see a busy-twirly and be able to
 cancel the request by hitting a button. The response data can be processed from
 JSON and transit into EDN, before ending up at the right place in `app-db`.
 
-So with two lines of code - simple ones at that - you'll get a good robust HTTP
-request process. However, as you'll soon see, there's no  magic happening to
+So with two lines of code - simple ones at that - you'll get an excellent robust HTTP
+request process. However, as you'll soon see, there's no magic happening to
 achieve the outcome. You do need to *_compose the right defaults_*.
 
 If there is a cost - and there is *_always_* a cost for abstraction - it is that
@@ -81,31 +81,29 @@ you'll need to do some upfront learning, and need to fashion these
 
 == An Overview
 
-I have some good news and some bad news. Good news first.
+I have some good news and some bad news — first, the good news.
 
 This library models an HTTP request using a Finite State Machine (hereafter FSM)
 - one which captures the various failure paths and retry paths, etc. And that
 leads to a robust and understandable request process.
 
-Also, this library wraps `fetch`, making it central to the FSM, and that means
-the network-level mechanics of a request are supplied in a browser-modern way.
+Also, this library wraps `fetch`, making it central to the FSM, and that delivers a browser-modern way to do the network layer.
 
-So, that's the end of the good news. The bad news to that you do the rest of the
-work.
+So, that's the end of the good news. The bad news is that you'll be doing the rest of the work. 
 
-This library leaves parts of the FSM unimplemented and it asks that you fill in
+This library leaves parts of the FSM unimplemented, and it asks that you fill in
 these blanks by writing a number of *_Logical State Handlers_*.
 
 Each `Logical State Handler` provides the behaviour for a single
-*_Logical State_* in the FSM.  To help you, this library provides "a task recipe"
+*_Logical State_* in the FSM.  To help you, this library offers "a task recipe"
 for each handler, describing what your implementation is expected to do. So, for
 example, in the `Failed` state, the recipe might say that you "perform error
 reporting" and "recover the application into a stable state, in light of the
 failure".
 
-Of course, there's a myriad of ways to implement both of these tasks and only
+Of course, there are many ways to implement both of these tasks and only
 you, the application programmer, know how to make it happen correctly for your
-application.  And that's exactly why the FSM is left incomplete and why you are
+application.  And that's precisely why the FSM is left incomplete and why you are
 asked to fill in the blanks.
 
 NOTE: With a bit of squinting and head tilting, you can see a
@@ -128,13 +126,13 @@ If your application's needs are sufficiently complicated, you can create
 multiple FSM compositions within the one app, with each configuration designed
 for a different kind of request.
 
-And, if one of them is used more regularly, you can nominate it to be
-*_the default FSM_*. That two line example shown earlier owes its brevity to
+And, if you use one regularly, you can nominate it to be
+*_the default FSM_*. That two-line example shown earlier owes its brevity to
 (implicitly) using a `default` FSM composition.
 
 Finally, to round off this overview, we note that each FSM instance has some
 working state, which we call `request-state`. In addition, there will likely be
-some state in `app-db` which is also associated with a request. Your
+some state stored within `app-db` which is also associated with a request. Your
 `Logical State handlers` will be responsible for pushing/projecting parts of
 `request-state` through into `app-db`, so that your UI can reflect the state of
 the request. Again, only you, the application programmer, know how you want this
@@ -148,12 +146,12 @@ So, here's the plan:
 * you should get to know the FSM topology it proposes (in the next section)
 * you will implement the blank parts of the FSM but writing a set of
 `Logical State handlers`, following the recipe for each.
-* you will compose an ensemble of these `Logical State handlers` to form a FSM
+* you will *_compose an ensemble_* of these `Logical State handlers` to form a FSM
 * your FSM will maintain/manage `request-state`
 * your FSM will likely push/project aspects of `request-state` into `app-db` 
 * you will write views in terms of what's projected into `app-db`, showing the
 user what's happening
-* and when the time comes, when you actually make the HTTP request, you'll be
+* and when the time comes, when you make the HTTP request, you'll be
 nominating which FSM to use (or you will implicitly be using your default FSM)
 
 
@@ -161,22 +159,22 @@ nominating which FSM to use (or you will implicitly be using your default FSM)
 
 An HTTP request is a multi-step process which plays out over time.
 
-We formalise it as a *_a machine_*, and specifically a Finite State Machine
+We formalise it as *_a machine_*, and specifically a Finite State Machine
 (FSM). The Internet is full of excellent resources describing FSMs, so here I'll
 be brief.
 
 By *_a machine_*, I'm referring to the abstract concept of something which
 *_does something_*.
 
-With a FSM the *_machine_* has a set of *_Logical States_* and *_Transitions_*
+With an FSM the *_machine_* has a set of *_Logical States_* and *_Transitions_*
 defined between them.  *_Logical States_* are a way to reason about *_where_* a
 machine is within an overall process. Each Logical State has discrete
 responsibilities, concerns and behaviours.
 
-*_Transitions_* cause a FSM to move from one Logical State to another - from one
+*_Transitions_* cause an FSM to move from one Logical State to another - from one
 behaviour to another. Over time - and I really would like to stress this time
-bit - events occur which *_trigger_* Transitions. That means a FSM goes from
-doing one thing, to doing another thing.
+bit - events occur which *_trigger_* Transitions. That means an FSM goes from
+doing one thing to doing another thing.
 
 The `Logical State Handlers` you write are about "doing a thing" when in a
 particular state. And, so, they implement behaviour for one part of "the
@@ -201,13 +199,11 @@ for one of the boxes
 * and, yes, there are variations on this FSM model of a request - this one is
 ours. We could, for example, have teased the "Problem" Logical State out into
 four distinct states: "Timed Out", "Connection Problem", "Recoverable Server
-Problem" and "Unrecoverable Server Problem".  We decided to NOT do that because
-of, well, reasons. My point is that there isn't a "right" model, just one that
-suits a purpose.
+Problem" and "Unrecoverable Server Problem".  We decided not to do that because of, well, reasons. My point is that there isn't a "right" model, just one that is fit for purpose.
 
 == Requesting
 
-Earlier we saw this code: 
+Earlier, we saw this code: 
 
 [source, Clojure]
 ----
@@ -288,16 +284,15 @@ pendulum to the opposite extreme and show you *_the most verbose_* use of the
 ----
 
 XXX add optional  `:cancel` event handler ??
-XXX add interceptor to assert correctness of the Logical State Handlers
+XXX add an interceptor to assert the correctness of the Logical State Handlers
 
-This specification offers a lot of flexibility. But we clearly don't 
-want to repeat this much every time. Particularly because, time after time,
+This specification offers a lot of flexibility. But we clearly don't want to repeat this much every time. Mainly because, time after time,
 we'll likely want the same headers, params and `Logical State handers`.
 
 == Profiles
 
 A *_profile_* is a fragment of an `:http` specification. It associates an 
-`id` with a common set of specifications. 
+`id` with a set of specifications. 
 
 You can "register" one or more *_profiles_*, typically on application 
 startup.
@@ -310,7 +305,7 @@ And if you think that sounds pretty simple, you'd be right.
 == Registering A Profile
 
 This code shows how to register a profile with id `:xyz`, and associate 
-with it certain specification values:
+it with certain specification values:
 [source, Clojure]
 ----
 (reg-event-fx
@@ -321,7 +316,7 @@ with it certain specification values:
                 ;; The value `:xyz` is the `id` of the profile being registered
                 ;; The special value of `:default` says that this profile
                 ;; should be used for all requests, unless otherwise overridden.
-                ;; Clearly, you can register multiple profiles
+                ;;  You can register multiple profiles
                 
                 :reg-profile   :xyz
 
@@ -429,7 +424,7 @@ The `:a` value in `map2`, which is `{:cc 1}`, simply replaces **completely** the
 
 Often, this default `merge` behaviour is good enough, particularly when the profiles have disjoint keys. 
 
-But when the profiles have overlapping keys it can be useful to take control about how map `values` are combined. 
+But when the profiles have overlapping keys it can be useful to take control of how map `values` are combined. 
 
 [source, Clojure]
 ----
@@ -517,7 +512,7 @@ An example of the `app-state` map.
 This is the data in `app-db` which some view functions might subscribe to, in
 order to render the UI
 
-XXX To avoid race conditions should the booleans be false in absence via subscriptions?  Eg: use `completed?` instead of `loading?` because "absence" (a nil) correctly matches the predacate's negative value. 
+XXX To avoid race conditions, should the booleans be false in absence via subscriptions?  Eg: use `completed?` instead of `loading?` because "absence" (a nil) correctly matches the predicate's negative value. 
 
 XXX consider what else needs to happen to help `re-frame-async-flow`
 
@@ -560,11 +555,11 @@ Overview: prepare the application for the pending HTTP request.
 
 .Recipe:
 * establish initial `app-state` at the nominated `:path`
-* optionally, if the application is to allow th user to cancel the request
+* optionally, if the application is to allow the user to cancel the request
 (e.g., via a button) then capture the `:request-id` of the request and assoc it
 into `app-state` for easy access.
 * optionally, put up a twirly-busy-thing, perhaps with a description of the
-request: "Loading all the blah things", perhaps with a cancel button
+request: "Loading all the blah things", probably with a cancel button
 * optionally, cause the application to change panel or view to be ready for the
 incoming response data.
 * trigger `:send` to cause the transition to `waiting`, with the `:send` being
@@ -574,7 +569,7 @@ an action associated with the transition.
 Views subscribed to this `app-state` will then render the UI, probably locking
 it up and allowing the user to see that a request is in-flight.
 
-XXX a panel might change .... perhaps the user clicked a button to "View Inappropriate", so the application will change panels to the inappropriates one (via a change in `app-db` state), AND also kickoff a server request to get the "inappropriates".
+XXX a panel might change .... perhaps the user clicked a button to "View Inappropriate", so the application will change panels to the inappropriate one (via a change in `app-db` state), AND also kickoff a server request to get the "inappropriates".
 
 Example implementation:
 [source, Clojure]
@@ -672,7 +667,7 @@ Example implementation:
 * `fetch` API body processing error; e.g. JSON parse error.
 * timeout - no response - retry-able
 * non 200 HTTP status - returned from the server - MAY have a response
-** may have a response :body returned from server which will might need to be processed. See https://tools.ietf.org/html/rfc7807 Imagine a 403 Forbidden response. XXX talk about how it might be EDN or a Blob etc.
+** may have a response :body returned from server which will need to be processed. See https://tools.ietf.org/html/rfc7807 Imagine a 403 Forbidden response. XXX talk about how it might be EDN or a Blob etc.
 * some HTTP status are retry-able and some are not
 
 === in-failed
@@ -690,14 +685,14 @@ Ultimately, it doesn't actually matter why we are in the failed state, but to he
 * log the error
 * show the error to the user
 * put the application back into a sane state
-* FSM trigger `:done`
+* FSM trigger `:teardown`
 
 Example implementation:
 [source, Clojure]
 ----
 (fn [{:keys [db] :as cofx} [_ {:keys [request-id context problem response] :as request-state}]]
   (let [path (:path context)]
-    {:http {:trigger :done
+    {:http {:trigger :teardown
             :request-id request-id}
      :db (-> db
              ...)}))
@@ -711,14 +706,14 @@ This state follows user cancellation.
 * put the application into a state consistent with the cancellation. What does
 the user see? What can they do next?
 * update `app-state`, maybe. 
-* FSM trigger `:done`
+* FSM trigger `:teardown`
 
 Example implementation:
 [source, Clojure]
 ----
 (fn [{:keys [db] :as cofx} [_ {:keys [request-id context problem response] :as request-state}]]
   (let [path (:path context)]
-    {:http {:trigger :done
+    {:http {:trigger :teardown
             :request-id request-id}
      :db (-> db
              ...)}))
