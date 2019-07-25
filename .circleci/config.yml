@@ -24,16 +24,10 @@ orbs:
                 - v1-dependencies-
 
           - run:
-              command: npm install
-
-          - run:
-              command: lein run -m shadow.cljs.devtools.cli compile ci
-
-          - run:
               command: sudo npm install -g karma-cli
 
           - run:
-              command: karma start --single-run --reporters junit,dots
+              command: lein ci
 
           - save_cache:
               paths:
