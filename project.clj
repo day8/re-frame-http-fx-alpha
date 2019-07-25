@@ -7,8 +7,9 @@
                  [org.clojure/clojurescript  "1.10.520" :scope "provided"]
                  [re-frame                   "0.10.8" :scope "provided"]]
 
-  :profiles {:dev   {:dependencies [[binaryage/devtools "0.9.10"]
-                                    [karma-reporter     "3.1.0"]]}}
+  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
+                                  [karma-reporter "3.1.0"]]
+                   :plugins      [[lein-shell "0.5.0"]]}}
 
   :clean-targets  [:target-path
                    "resources/public/js/test"]
@@ -20,7 +21,13 @@
 
   :test-paths     ["test"]
 
-  :aliases {"dev" ["with-profile" "dev" "run" "-m" "shadow.cljs.devtools.cli" "watch" "browser-test"]}
+  :aliases {"dev" ["do"
+                   ["shell" "npm" "install"]
+                   ["with-profile" "dev" "run" "-m" "shadow.cljs.devtools.cli" "watch" "browser-test"]]
+            "ci"  ["do"
+                   ["shell" "npm" "install"]
+                   ["run" "-m" "shadow.cljs.devtools.cli" "compile" "ci"]
+                   ["shell" "karma" "start" "--single-run" "--reporters" "junit,dots"]]}
 
   :deploy-repositories [["clojars" {:sign-releases false
                                     :url "https://clojars.org/repo"
