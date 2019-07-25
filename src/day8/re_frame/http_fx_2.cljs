@@ -317,7 +317,7 @@
   "In current value of request-id->request-and-controller moves state of request
    with request-id to-state if it is a valid state transition, otherwise moves
    state to :failed."
-  [current request-id to-state]
+  [current request-id to-state merge-request-state]
   (let [{::keys [request]} (get current request-id)
         {from-state :state} request
         valid-to-state? (get fsm from-state #{})]
@@ -325,8 +325,10 @@
       (cond-> current
               (= to-state :cancelled)
               (assoc-in [request-id ::js-controller] nil)
-              :always
-              (assoc-in [request-id ::request :state] to-state))
+              true
+              (assoc-in [request-id ::request :state] to-state)
+              true
+              (update-in [request-id ::request] merge merge-request-state))
       (update-in current [request-id ::request] assoc
                  :state :failed
                  :failure :fsm))))
@@ -338,17 +340,15 @@
    transition, otherwise to :failed. Dispatches to the appropriate event handler.
    Returns nil."
   ([request-id to-state]
-   (fsm->! request-id to-state nil nil))
-  ([request-id to-state response]
-   (fsm->! request-id to-state response nil))
-  ([request-id to-state response error]
-   (let [[_ {{{:keys [state] :as request} ::request
-              js-controller               ::js-controller} request-id}]
+   (fsm->! request-id to-state nil))
+  ([request-id to-state merge-request-state]
+   (let [[_ {{{:keys [state] :as request-state} ::request
+              js-controller                     ::js-controller} request-id}]
          (swap-vals! request-id->request-and-controller
-                     fsm-swap-fn request-id to-state)
+                     fsm-swap-fn request-id to-state merge-request-state)
          event-key (get fsm->event-keys state)
-         event (or (get request event-key) [:no-handler])
-         event' (conj event request response error)]
+         event (or (get request-state event-key) [:no-handler])
+         event' (conj event request-state)]
      (when (= :cancelled state)
        (.abort js-controller))
      (dispatch event'))))
@@ -360,15 +360,17 @@
   (let [body (if (= :json reader) (js->clj js-body :keywordize-keys true) js-body)
         response' (assoc response :body body)]
     (if (:ok? response')
-      (fsm->! request-id :processing response')
-      (fsm->! request-id :problem response' {:problem :server}))))
+      (fsm->! request-id :processing {:response response'})
+      (fsm->! request-id :problem {:response response'
+                                   :problem :server}))))
 
 (defn body-failed-handler
   "Dispatches the request with request-id and the associated response to the
    in-failed event handler due to a failure reading the body. Returns nil."
   [request-id response reader js-error]
   ;(console :error js-error)
-  (fsm->! request-id :failed response {:problem :body}))
+  (fsm->! request-id :failed {:response response
+                              :problem :body}))
 
 (defn response-handler
   "Reads the js/Response JavaScript object stream, that is associated with the
@@ -389,7 +391,7 @@
 (defn problem-handler
   [request-id js-error]
   ;;(console :error js-error)
-  (fsm->! request-id :problem nil {:problem js-error}))
+  (fsm->! request-id :problem {:problem js-error}))
 
 (defn fetch
   "Initiate the request. Returns nil."
