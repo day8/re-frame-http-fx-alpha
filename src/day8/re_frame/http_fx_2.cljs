@@ -136,7 +136,7 @@
            #js [js-promise
                 (js/Promise.
                   (fn [_ reject]
-                    (js/setTimeout #(reject :problem/timeout) timeout)))])
+                    (js/setTimeout #(reject :timeout) timeout)))])
     js-promise))
 
 ;; Effect Dispatch to Sub-effects
