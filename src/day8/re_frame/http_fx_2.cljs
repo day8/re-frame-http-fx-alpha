@@ -145,7 +145,7 @@
 (def sub-effects
   "The set of supported sub-effects."
   #{:get :head :options :post :put :delete
-    :transition :reg-profile :unreg-profile :abort})
+    :trigger :reg-profile :unreg-profile :abort})
 
 (defn sub-effect-dispatch
   "Returns the sub-effect key in m if exactly one exists, otherwise an error
@@ -290,9 +290,11 @@
    :cancelled  #{:teardown}
    :teardown   #{}})
 
-(def transition->to-state
+(def trigger->to-state
+  "A mapping of triggers to states."
   {:request   :setup
-   :fetch     :waiting
+   :send      :waiting
+   :retry     :waiting
    :problem   :problem
    :success   :processing
    :fail      :failed
@@ -444,11 +446,10 @@
   (setup (merge request {:method "OPTIONS" :url url})))
 
 (defmethod sub-effect :trigger
-  [{transition :trigger
-    request-id :request-id}]
+  [{:keys [request-id trigger]}]
   (let [request (get-in @request-id->request-and-controller [request-id ::request])
-        to-state (get transition->to-state transition)]
-    (when (= :fetch transition)
+        to-state (get trigger->to-state trigger)]
+    (when (#{:send :retry} trigger)
       (fetch request))
     (fsm->! request-id to-state)))
 
