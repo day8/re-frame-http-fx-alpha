@@ -72,9 +72,9 @@ This request will be retried on timeouts, and 503
 failure, etc. Logs will be written, errors will be reported, and interesting
 statistics will be captured. The user will see a busy-twirly and be able to
 cancel the request by hitting a button. The response data can be processed from
-JSON and transit into EDN, before ending up at the right place in `app-db`. Etc.
+JSON and transit into EDN, before being put into right place within `app-db`. Etc.
 
-So, with two lines of code - simple ones at that - you'll get a robust HTTP
+So, by using just two lines of code - simple ones at that - you'll get a robust HTTP
 request process. However, as you'll soon see, there's no magic happening to
 achieve the outcome. You'll need to *_compose the right defaults_*.
 
@@ -96,11 +96,11 @@ browser-modern way to do the network layer.
 But, that's the end of the good news. The bad news is that you'll be 
 doing most of the work. 
 
-This library leaves parts of the FSM unimplemented, and it asks that you fill in
+Parts of the FSM are left unimplemented, and you will you will need to fill in
 these blanks by writing a number of *_Logical State Handlers_*.
 
 A `Logical State Handler` provides the behaviour for a single
-*_Logical State_* in the FSM.  To help you, this library offers "a recipe"
+*_Logical State_* in the FSM.  To help you, this library provides "a recipe"
 for each handler, describing what your implementation might reasonably be
 expected to do. So, for example, in the `Failed` state, the recipe might 
 say that you "perform error reporting" and "recover the application 
@@ -126,16 +126,18 @@ Later, once you have written the necessary set of `Logical State Handlers`, you
 *_compose them to form a functioning FSM_*. And, because this is a ClojureScript
 library, this composition happens in a *_data oriented_* way.
 
-If your application's needs are sufficiently complicated, you can create
+If your application's needs are complicated, you can create
 multiple FSM compositions within the one app, with each configuration designed
 for a different kind of request.
 
 And, if you use one regularly, you can nominate it to be
-*_the default FSM_*. That two-line example shown earlier owes its brevity to
+*_the default FSM_*. That two-line example I presented earlier owes its brevity to
 (implicitly) using a `default` FSM composition.
 
-Finally, let's talk about state. Each FSM instance has some
-working state, which we call `request-state`. In addition, there will likely be
+Finally, let's talk about state. 
+
+Each FSM instance has some
+working state, which we call `request-state`. In addition, there will be
 some state stored within `app-db` which is also associated with a request. Your
 `Logical State handlers` will be responsible for pushing/projecting parts of
 `request-state` through into `app-db`, so that your UI can reflect the state of
@@ -169,14 +171,15 @@ be brief.
 By *_a machine_*, I'm referring to the abstract concept of something which
 *_does something_*.
 
-With an FSM the *_machine_* has a set of *_Logical States_* and *_Transitions_*
-defined between them.  *_Logical States_* are a way to reason about *_where_* a
-machine is within an overall process. Each Logical State has discrete
+With an FSM the *_machine_* has a set of *_Logical States_* which are way 
+to reason about *_where_* a
+machine is within an overall process - a way to reason about what the machine is doing at some point of time.
+Each Logical State has discrete
 responsibilities, concerns and behaviours.
 
 *_Transitions_* cause an FSM to move from one Logical State to another - from one
 behaviour to another. Over time - and I really would like to stress this time
-bit - events occur which *_trigger_* Transitions. That means an FSM goes from
+bit - events occur which *_trigger_* Transitions. That means the machine goes from
 doing one thing to doing another thing.
 
 The `Logical State Handlers` you write are about "doing a thing" when in a
@@ -192,7 +195,7 @@ Notes:
 
 * to use this library, you'll need to understand this FSM
 * the boxes in the diagram represent the FSM's *_Logical States_*
-* the lines between the boxes are the allowed changes between *_Logical States_*,
+* the lines between the boxes show allowed changes between *_Logical States_*,
 known as *_Transitions_*
 * the names on those lines are the *_Triggers_* (the event which causes the
 Transition to happen)
@@ -206,7 +209,7 @@ Problem" and "Unrecoverable Server Problem".  We decided not to do that because 
 
 == Requesting
 
-Earlier, we saw this code: 
+Earlier, we saw this code which uses an effect `:http` to initiate an HTTP GET request:
 
 [source, Clojure]
 ----
@@ -218,10 +221,8 @@ Earlier, we saw this code:
             :path [:put :response :data :at :this :path :in :app-db]}}))
 ----
 
-It uses an effect `:http` to initiate an HTTP GET request. 
-
 Who doesn't love terse? But, as a learning exercise, 
-let's pendulum to the opposite extreme 
+let's now pendulum to the opposite extreme 
 and show you *_the most verbose_* use of the
 `:http` effect:
 [source, Clojure]
@@ -248,9 +249,11 @@ and show you *_the most verbose_* use of the
              :in-succeeded  [:yah! "fist-pump" :twice]
              :in-teardown   [:so-tired-now]
              
-             
+             ;; query params
              :params     {:user     "Fred"
                           :customer "big one"}
+                          
+             ;; headers
              :headers    {"Authorization"  "Bearer QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
                           "Cache-Control"  "no-cache"}
 
@@ -258,8 +261,7 @@ and show you *_the most verbose_* use of the
              :content-type {#"application/.*json" :json
                             #"application/edn"    :text}
 
-             ;; Timeout
-             ;; optional, by default request will run as long as browser implementation allows
+             ;; Optional. By default a request will run as long as the browser implementation allows
              :timeout       5000
 
              :credentials   "omit" ;; default is 'include'
@@ -271,12 +273,15 @@ and show you *_the most verbose_* use of the
              ;; ref https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
              :integrity     "sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE="
 
-             ;; NOTE: GET or HEAD cannot have body!  XXX
+             ;; NOTE: GET or HEAD cannot have body!  
+             ;; the following XXX
              :body          String | js/ArrayBuffer | js/Blob | js/FormData | js/BufferSource | js/ReadableStream
 
-             ;; Optional: the path within `app-db` to which request related data should be put
+             ;; Optional. The path within `app-db` to which request related data should be put
              ;; See section in these docs called `path state`  for more details 
              :path [:put :response :data :at :this :path :in :app-db]
+             
+             XXX I think :max-retries should be out here
 
              ;; Optional: an area to put application-specific data 
              ;; If data is supplied here, it will probably be used later within the 
@@ -288,27 +293,28 @@ and show you *_the most verbose_* use of the
 ----
 
 XXX add optional  `:cancel` event handler ?? + 
-XXX add an interceptor to assert the correctness of the Logical State Handlers + 
+XXX add an interceptor to assert the correctness of the Transitions - Logical State Handlers + 
 
-This specification offers a lot of flexibility. But we clearly don't want to repeat this much every time. Mainly because, time after time,
+While this specification offers a lot of flexibility, we clearly don't want to repeat
+this much every time. Mainly because, time after time,
 we'll likely want the same headers, params and `Logical State handers`.
+
+How do we avoid repertition? 
 
 == Profiles
 
-A *_profile_* is a fragment of an `:http` specification. It associates an 
-`id` with a set of specifications. 
+A *_Profile_* associates an `id` with a fragment of an `:http` specification. 
 
-You can "register" one or more *_profiles_*, typically on application 
+You "register" one or more *_Profiles_*, typically on application 
 startup.
 
-An `:http` specification is just data (a map) which means a fragment is also 
-just data (again, a map). 
-And if you think that sounds pretty simple, you'd be right.
+Because an `:http` specification is just data (a map), a fragment is also 
+just data (again, a map). And if you think that sounds pretty simple, you'd be right.
 
 
 == Registering A Profile
 
-This code shows how to register a profile with id `:xyz`, and associate 
+The code below shows how to register a profile with id `:xyz`, and associate 
 it with certain specification values:
 [source, Clojure]
 ----
@@ -329,7 +335,7 @@ it with certain specification values:
       
                 ;; the values we are capturing and associating with this profile 
                 :values {
-                          ;; compose the FSM
+                          ;; compose the FSM handlers
                           :in-process    [:my-processor]
                           :in-problem    [:generic-problem :extra "whatever"]
                           :in-failed     [:my-special-failed]
@@ -341,11 +347,10 @@ it with certain specification values:
                           :context  {:max-retries 2}}}}))
 ----
 
-XXX where do we talk about default.
 
 == Using A Profile
 
-Here's an example of using that profile we registered above: 
+Here's an example of using the *_Profile_* we registered above: 
 [source, Clojure]
 ----
 {:http {:get      "http://api.endpoint.com/articles/"
@@ -353,10 +358,10 @@ Here's an example of using that profile we registered above:
 ----
 Wait! Where? Where is it used?
 
-If you look back, you'll see the profile was registered with `:default? true` and 
-that means it will be used by default, if no profile is explicitly provided. 
+If you look back, you'll see the *_Profile_* was registered with `:default? true` and 
+that means it will be used by default, but only if no profile is explicitly provided. 
 
-Here's an explicit example of using that profile we registered above:
+Here's the *_Profile_* is explicitly given: 
 [source, Clojure]
 ----
 {:http {:get      "http://api.endpoint.com/articles/"
@@ -364,10 +369,10 @@ Here's an explicit example of using that profile we registered above:
         :profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
 ----
 
-That key `:profiles` allows you to nominate a vector of previously registered `profile` `ids`. The data
-(`:values`) associated with those profile  `ids` will be added in the request.
+That key `:profiles` allows you to nominate a vector of previously registered *_Profile_* `ids`. The data
+(`:values`) associated with those *_Profile_*  `ids` will be added in the request.
 
-Here's another example use, but this time with multiple profile ids (a `vector` of them):
+Here's another example, but this time with multiple profile ids (a `vector` of them):
 [source, Clojure]
 ----
 {:http {:get      "http://api.endpoint.com/articles/"
@@ -382,16 +387,16 @@ NOTE: Using `:profiles []` would mean no profiles, even if one of them has `:def
 
 === Composing Profiles
 
-When each profile holds a `:values` map and we must compose multiple of them - how should
-we "combine" the many maps into one, final map which is our `:http` specification?  
+When each profile holds a `:values` map and we must compose multiple of them, how should
+we "combine" the many maps into one, final map to form the `:http` specification?  
 
-The answer is to imagine a `reduce` across a seq of maps, using `merge`:
+Answer: imagine a `reduce` across a seq of maps, using `merge`:
 [source, Clojure]
 ----
 (reduce merge {}  [map1, map2, map3])
 ----
 `merge` will accumulate the key/value pairs. Instead of `map1`, `map2`, etc, imagine that 
-it was actually `profile`, `profile2, etc. 
+it was actually `profile`, `profile2, etc.
 
 Example #1:
 [source, Clojure]
@@ -419,7 +424,7 @@ Example #2:
 the result is `{a: 11  :b 2}`. 
 
 You'll notice that the key `:a` is in both `map1` and `map3`. In the result, `:a` has the value `11`, not `1`, 
-because the value in `map3` overwrites the earlier value in `map1`. 
+because the value in `map3` overwrites the earlier value in `map1`.
 
 Also, remember that `merge` is shallow. Consider:
 [source, Clojure]
@@ -433,13 +438,13 @@ You might be tempted to think the result should be
 `{a: {:aa 1 :cc 1}}`
 but it is actually: `{a: {:cc 1}}`. 
 
-The `:a` value in `map2`, which is `{:cc 1}`, simply replaces **completely** the earlier value of `{:aa 1}`. The values `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recursively on the map values themselves.
+Why? Well, the `:a` value in `map2`, which is `{:cc 1}`, simply replaces **completely** the earlier value of `{:aa 1}`. The values `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recursively on the map values themselves.
 
-== Beyond Default `merge` Behaviour
+== Beyond This Default `merge` Behaviour
 
 Often, this default `merge` behaviour is good enough, particularly when the profiles have disjoint keys. 
 
-But when the profiles have overlapping keys it can be useful to take control of how map `values` are combined. 
+But, when the profiles have overlapping keys, it can be useful to take control of how map `values` are combined. 
 
 [source, Clojure]
 ----
