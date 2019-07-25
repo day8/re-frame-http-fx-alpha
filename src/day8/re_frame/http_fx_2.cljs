@@ -351,7 +351,8 @@
          event' (conj event request-state)]
      (when (= :cancelled state)
        (.abort js-controller))
-     (dispatch event'))))
+     (when (not= :waiting state)
+       (dispatch event')))))
 
 (defn body-handler
   "Dispatches the request with request-id and the associated response with a
