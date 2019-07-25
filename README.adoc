@@ -8,9 +8,8 @@
 :icons: font
 
 > This library is under development, so don't try to use it yet. + 
-> But this README/tutorial is almost done, and it explains how it will work. + 
-> Please have a read and give us your ideas or critique. Or,
-> more casually, tweet me @wazound
+> But this README/tutorial explains how it will work + 
+> Have a read and give us your ideas or critique. Or, more casually, tweet me @wazound
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
@@ -26,13 +25,13 @@ HTTP requests are simple, right?
 You send off a request, you get back a response, and you store it in `app-db`.
 Done.
 
-Except, of course, _**requests are anything but simple**_.  There is a happy
+Except _**requests are anything but simple**_.  There is a happy
 path, yes, but it winds through a deceptively dense briar thicket of fiddly
-issues. Coding for unreliable servers and unreliable networks using an async
+issues. Accessing unreliable servers across unreliable networks using an async
 flow of control is hard enough, what with the multiple failure paths
 and possible retries but, on top of that, there's also the
 *_cross-cutting issues_* of managing UI updates, user-initiated cancellations,
-error recovery, logging, statistics gathering, etc. There's a bit going on.
+error recovery, logging, statistics gathering, etc. 
 
 Many programmers instinctively shy away from the tentacles of this complexity,
 pragmatically preferring naive but simple solutions. And yet, even accepting
@@ -44,8 +43,8 @@ This library has two goals:
   1. proper treatment for failure paths (robustness and a better user experience)
   2. you write less code for each request (no repetition or fragile boilerplate)
 
-These two goals would typically pull in opposite directions, but this library
-liberates you from the horns of this dilemma and seeks to let you have your
+These two goals might typically pull in opposite directions, but this library
+saves you from the horns of this dilemma and seeks to let you have your
 cake and eat it too. In fact, maybe even eat it twice.  But no chocolate
 sprinkles. We're not monsters.
 
@@ -65,52 +64,57 @@ Here's a re-frame event handler returning an effect keyed `:http`.
 
 
 That `:http` effect will GET from the given URL and place any response data into
-`app-db` at the given path. The request will be retried on timeouts, and 503
+`app-db` at the given path. 
+
+But wait, there's more.
+
+This request will be retried on timeouts, and 503
 failure, etc. Logs will be written, errors will be reported, and interesting
 statistics will be captured. The user will see a busy-twirly and be able to
 cancel the request by hitting a button. The response data can be processed from
-JSON and transit into EDN, before ending up at the right place in `app-db`.
+JSON and transit into EDN, before ending up at the right place in `app-db`. Etc.
 
-So with two lines of code - simple ones at that - you'll get an excellent robust HTTP
+So, with two lines of code - simple ones at that - you'll get a robust HTTP
 request process. However, as you'll soon see, there's no magic happening to
-achieve the outcome. You do need to *_compose the right defaults_*.
+achieve the outcome. You'll need to *_compose the right defaults_*.
 
-If there is a cost - and there is *_always_* a cost for abstraction - it is that
-you'll need to do some upfront learning, and need to fashion these
-*_right defaults_*. Let's begin the upfront learning process now ...
+The cost - and there is *_always_* a cost for abstraction - is the 
+upfront learning needed to fashion these
+*_right defaults_*. Let's begin that learning process now ...
 
 == An Overview
 
 I have some good news and some bad news — first, the good news.
 
 This library models an HTTP request using a Finite State Machine (hereafter FSM)
-- one which captures the various failure paths and retry paths, etc. And that
+- one which captures the various failure paths and retry paths, etc. That
 leads to a robust and understandable request process.
 
-Also, this library wraps `fetch`, making it central to the FSM, and that delivers a browser-modern way to do the network layer.
+Also, this library wraps `fetch`, making it central to the FSM, and that delivers a 
+browser-modern way to do the network layer.
 
-So, that's the end of the good news. The bad news is that you'll be doing the rest of the work. 
+But, that's the end of the good news. The bad news is that you'll be 
+doing most of the work. 
 
 This library leaves parts of the FSM unimplemented, and it asks that you fill in
 these blanks by writing a number of *_Logical State Handlers_*.
 
-Each `Logical State Handler` provides the behaviour for a single
-*_Logical State_* in the FSM.  To help you, this library offers "a task recipe"
-for each handler, describing what your implementation is expected to do. So, for
-example, in the `Failed` state, the recipe might say that you "perform error
-reporting" and "recover the application into a stable state, in light of the
-failure".
+A `Logical State Handler` provides the behaviour for a single
+*_Logical State_* in the FSM.  To help you, this library offers "a recipe"
+for each handler, describing what your implementation might reasonably be
+expected to do. So, for example, in the `Failed` state, the recipe might 
+say that you "perform error reporting" and "recover the application 
+into a stable state, in light of the failure".
 
-Of course, there are many ways to implement both of these tasks and only
-you, the application programmer, know how to make it happen correctly for your
-application.  And that's precisely why the FSM is left incomplete and why you are
-asked to fill in the blanks.
+Of course, only
+you, the application programmer, know how to make "a recipe" happen correctly for your
+application.  And that's precisely why the FSM's implementation is left incomplete 
+and why you are asked to fill in the blanks.
 
 NOTE: With a bit of squinting and head tilting, you can see a
 *_Logical State Handler_* as something of a *_callback_*. For example, writing a
 `Logical State Handler` for the `Failed State` is very similar to supplying an
-`on-failure` callback. As we'll soon see, there is slightly more going on, but
-that's a pretty good first approximation. And, of course, because we're in
+`on-failure` callback. Except, of course, because we're in
 re-frame land, the mechanism will be more `dispatch-back` than `callback`.
 
 Each `Logical State Handler` you write has to be something of a "good citizen"
@@ -130,7 +134,7 @@ And, if you use one regularly, you can nominate it to be
 *_the default FSM_*. That two-line example shown earlier owes its brevity to
 (implicitly) using a `default` FSM composition.
 
-Finally, to round off this overview, we note that each FSM instance has some
+Finally, let's talk about state. Each FSM instance has some
 working state, which we call `request-state`. In addition, there will likely be
 some state stored within `app-db` which is also associated with a request. Your
 `Logical State handlers` will be responsible for pushing/projecting parts of
@@ -141,17 +145,16 @@ example, you might write a `:retrying?` value of `true` into `app-db` which then
 causes the UI to render "Sorry about the delay. There was a problem with the
 network connection, so we're trying again".
 
-So, here's the plan: 
+So, the plan from here is: 
 
-* you should get to know the FSM topology it proposes (in the next section)
+* you should get to know the FSM topology (in the next section)
 * you will implement the blank parts of the FSM but writing a set of
 `Logical State handlers`, following the recipe for each.
 * you will *_compose an ensemble_* of these `Logical State handlers` to form a FSM
-* your FSM will maintain/manage `request-state`
 * your FSM will likely push/project aspects of `request-state` into `app-db` 
-* you will write views in terms of what's projected into `app-db`, showing the
+* you will write views in terms of what's projected into `app-db`, to show the
 user what's happening
-* and when the time comes, when you make the HTTP request, you'll be
+* when you make an HTTP request, you'll be
 nominating which FSM to use (or you will implicitly be using your default FSM)
 
 
