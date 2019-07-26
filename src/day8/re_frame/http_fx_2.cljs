@@ -139,34 +139,23 @@
                     (js/setTimeout #(reject :timeout) timeout)))])
     js-promise))
 
-;; Effect Dispatch to Sub-effects
+;; Effect Dispatch to Actions
 ;; =============================================================================
 
-(def sub-effects
-  "The set of supported sub-effects."
-  #{:get :head :options :post :put :delete
-    :trigger :reg-profile :unreg-profile :abort})
-
-(defn sub-effect-dispatch
-  "Returns the sub-effect key in m if exactly one exists, otherwise an error
-   keyword if zero or many exist."
-  [m]
-  (let [found (filter sub-effects (keys m))]
-    (case (count found)
-      0 :failure/missing-sub-effect
-      1 (first found)
-      :failure/multiple-sub-effects)))
-
-(defmulti sub-effect sub-effect-dispatch)
+(defmulti action :action)
 
 (defn http-fx
   "Executes the HTTP effect via value-based dispatch to sub-effects."
   [effect]
   (let [seq-of-sub-effects (->seq effect)]
     (doseq [effect seq-of-sub-effects]
-      (sub-effect effect))))
+      (action effect))))
 
 (reg-fx :http http-fx)
+
+(defmethod action :default
+  [m]
+  (console :error "http fx: no matching :action for " m))
 
 ;; Profiles
 ;; =============================================================================
@@ -176,7 +165,7 @@
   (atom {}))
 
 (defn profile-swap-fn
-  [current {profile-id :reg-profile
+  [current {profile-id :id
             default?   :default?
             :as        profile}]
   (cond-> current
@@ -191,12 +180,12 @@
           :always
           (assoc profile-id profile)))
 
-(defmethod sub-effect :reg-profile
+(defmethod action :reg-profile
   [profile]
   (swap! profile-id->profile profile-swap-fn profile))
 
-(defmethod sub-effect :unreg-profile
-  [{profile-id :unreg-profile}]
+(defmethod action :unreg-profile
+  [{profile-id :id}]
   (swap! profile-id->profile #(dissoc %1 %2) profile-id))
 
 (defn get-profile
@@ -243,30 +232,6 @@
   (->> profiles
       (get-profiles)
       (conj-profiles m)))
-
-;; Invalid Sub-effects
-;; =============================================================================
-(defmethod sub-effect :failure/missing-sub-effect
-  [m]
-  (let [m' (m+profiles m)
-        {:keys [in-failure]} m'
-        err {:failure :invalid
-             :reason :missing-sub-effect
-             :debug-message "invalid effect map contains no sub-effect key."}]
-    (if in-failure
-      (dispatch (conj in-failure nil nil err))
-      (console :error "http fx: no in-failure event handler exists to handle this error: " err))))
-
-(defmethod sub-effect :failure/multiple-sub-effects
-  [m]
-  (let [m' (m+profiles m)
-        {:keys [in-failure]} m'
-        err {:failure :invalid
-             :reason :multiple-sub-effects
-             :debug-message "invalid sub-effect map contains multiple sub-effect keys."}]
-    (if in-failure
-      (dispatch (conj in-failure nil nil err))
-      (console :error "http fx: no in-failure event handler exists to handle this error: " err))))
 
 ;; Requests
 ;; =============================================================================
@@ -424,31 +389,34 @@
     (fsm->! request-id :setup)
     nil))
 
-(defmethod sub-effect :get
-  [{url :get :as request}]
-  (setup (merge request {:method "GET" :url url})))
+(defmethod action :GET
+  [m]
+  (setup (merge m {:method "GET"})))
 
-(defmethod sub-effect :head
-  [{url :head :as request}]
-  (setup (merge request {:method "HEAD" :url url})))
+(defmethod action :HEAD
+  [m]
+  (setup (merge m {:method "HEAD"})))
 
-(defmethod sub-effect :post
-  [{url :post :as request}]
-  (setup (merge request {:method "POST" :url url})))
+(defmethod action :POST
+  [m]
+  (setup (merge m {:method "POST"})))
 
-(defmethod sub-effect :put
-  [{url :put :as request}]
-  (setup (merge request {:method "PUT" :url url})))
+(defmethod action :PUT
+  [m]
+  (setup (merge m {:method "PUT"})))
 
-(defmethod sub-effect :delete
-  [{url :delete :as request}]
-  (setup (merge request {:method "DELETE" :url url})))
+(defmethod action :DELETE
+  [m]
+  (setup (merge m {:method "DELETE"})))
 
-(defmethod sub-effect :options
-  [{url :options :as request}]
-  (setup (merge request {:method "OPTIONS" :url url})))
+(defmethod action :OPTIONS
+  [m]
+  (setup (merge m {:method "OPTIONS"})))
 
-(defmethod sub-effect :trigger
+;; FSM Trigger
+;; =================================================================================
+
+(defmethod action :trigger
   [{:keys [request-id trigger]}]
   (let [request (get-in @request-id->request-and-controller [request-id ::request])
         to-state (get trigger->to-state trigger)]
@@ -457,15 +425,16 @@
     (fsm->! request-id to-state)))
 
 ;; Abort
-;; =============================================================================
+;; =================================================================================
 
-(defmethod sub-effect :abort
-  [{request-id :abort}]
+(defmethod action :abort
+  [{:keys [request-id]}]
   (fsm->! request-id :cancelled))
 
 (defn abort-event-handler
   "Generic HTTP abort event handler."
   [_ [_ request-id]]
-  {:http {:abort request-id}})
+  {:http {:action :abort
+          :request-id request-id}})
 
 (reg-event-fx :abort abort-event-handler)

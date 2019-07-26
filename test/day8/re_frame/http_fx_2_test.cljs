@@ -102,39 +102,8 @@
               (js/setTimeout #(reject :winner) 32)))
           16)
         (.catch (fn [value]
-                  (is (= :problem/timeout value))
+                  (is (= :timeout value))
                   (done))))))
-
-;; Effect Dispatch to Sub-effects
-;; =============================================================================
-
-(deftest sub-effect-dispatch-test
-  (is (= :failure/missing-sub-effect
-         (http-fx-2/sub-effect-dispatch {})))
-  (is (= :failure/missing-sub-effect
-         (http-fx-2/sub-effect-dispatch {:bogus ""})))
-  (is (= :failure/multiple-sub-effects
-         (http-fx-2/sub-effect-dispatch {:get "" :head ""})))
-  (is (= :get
-         (http-fx-2/sub-effect-dispatch {:get ""})))
-  (is (= :head
-         (http-fx-2/sub-effect-dispatch {:head ""})))
-  (is (= :options
-         (http-fx-2/sub-effect-dispatch {:options ""})))
-  (is (= :post
-         (http-fx-2/sub-effect-dispatch {:post ""})))
-  (is (= :put
-         (http-fx-2/sub-effect-dispatch {:put ""})))
-  (is (= :delete
-         (http-fx-2/sub-effect-dispatch {:delete ""})))
-  (is (= :transition
-         (http-fx-2/sub-effect-dispatch {:transition ""})))
-  (is (= :reg-profile
-         (http-fx-2/sub-effect-dispatch {:reg-profile ""})))
-  (is (= :unreg-profile
-         (http-fx-2/sub-effect-dispatch {:unreg-profile ""})))
-  (is (= :abort
-         (http-fx-2/sub-effect-dispatch {:abort ""}))))
 
 ;; Profiles
 ;; =============================================================================
@@ -149,10 +118,12 @@
                   :in-problem [:in-problem-a]
                   :timeout    5000
                   :profiles   [:xyz :jwt]
-                  :get        "http://api.example.com/articles"}
+                  :action     :GET
+                  :url        "http://api.example.com/articles"}
          (http-fx-2/conj-profiles
            {:profiles   [:xyz :jwt]
-            :get        "http://api.example.com/articles"
+            :action     :GET
+            :url        "http://api.example.com/articles"
             :in-process [:in-process-a]
             :in-problem [:in-problem-a]
             :params     {:sort :desc}
@@ -179,14 +150,16 @@
            {:http-xyz {::http-fx-2/request       {:state :waiting}
                        ::http-fx-2/js-controller {}}}
            :http-xyz
-           :problem)))
+           :problem
+           nil)))
   (is (= {:http-xyz {::http-fx-2/request       {:state :cancelled}
                      ::http-fx-2/js-controller nil}}
          (http-fx-2/fsm-swap-fn
            {:http-xyz {::http-fx-2/request       {:state :waiting}
                        ::http-fx-2/js-controller {}}}
            :http-xyz
-           :cancelled)))
+           :cancelled
+           nil)))
   (is (= {:http-xyz {::http-fx-2/request       {:state :failed
                                                        :failure :fsm}
                      ::http-fx-2/js-controller {}}}
@@ -194,4 +167,5 @@
            {:http-xyz {::http-fx-2/request       {:state :waiting}
                        ::http-fx-2/js-controller {}}}
            :http-xyz
-           :done))))
+           :done
+           nil))))
