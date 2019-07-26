@@ -353,27 +353,29 @@ it with certain specification values:
                           :context  {:max-retries 2}}}}))
 ----
 
-XXX see max-retries above 
+XXX max-retries above. Is right?
 
 == Using A Profile
 
 Here's an example of using the *_Profile_* we registered above: 
 [source, Clojure]
 ----
-{:http {:get      "http://api.endpoint.com/articles/"
-        :path     [:put :response :data :at :this :path :in :app-db]}
+{:http {:action :GET
+        :url    "http://api.endpoint.com/articles/"
+        :path   [:somewhere :in :app-db]}
 ----
-Wait! Where? Where is it used?
+Wait! Where? That's the same as before!
 
 If you look back, you'll see the *_Profile_* was registered with `:default? true` and 
-that means it will be used by default, but only if no profile is explicitly provided. 
+that means it will be used by default, but only if no Profile is explicitly provided. 
 
-Here's the *_Profile_* is explicitly given: 
+Here's how to explicitly nominate a *_Profile_*: 
 [source, Clojure]
 ----
-{:http {:get      "http://api.endpoint.com/articles/"
-        :path     [:put :response :data :at :this :path :in :app-db]
-        :profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
+{:http {:action :GET
+        :url    "http://api.endpoint.com/articles/"
+        :path   [:somewhere :in :app-db]
+        :with-profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
 ----
 
 That key `:profiles` allows you to nominate a vector of previously registered *_Profile_* `ids`. The data
@@ -498,10 +500,23 @@ For each key/value pair ...
 
 .Where there are duplicate keys in two maps being merged the method by which the `values` are combined depends on the type of the values: 
 * if the values are strings then `str` is used to combine them
+* if the values are a set then `clojure.set/union`
+* if the values is a collection then combined via:
+** maps - merge
+** vectors and lists - conj 
 * if the values satisfy `map?` then `merge` is used, but, again, only to one level
 * if the values are collection then XXX is used  ... seq? 
 
-XXX no this won't work. The vectors for State Handlers will be conj and we don't want that.  
+XXX no depth to maps 
+
+=== Advanced Profiles
+
+Where you need to take control of the process you can use the libraries API function `with-profiles`
+```
+{:http (-> (http/with-profiles [:xyz :another])       ;; combines two profiles and returns a map
+           (assoc-in [:fsm :in-setup]  [:special])    ;; manipulate the spec in the way you want 
+           (update-in [:url] str "/path"))
+```
 
 = About State
 
