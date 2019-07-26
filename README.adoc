@@ -268,6 +268,7 @@ and show you *_the most verbose_* use of the
              ;; Where there is a body to the response, fetch will automatically 
              ;; process that body according to mime type provided. 
              ;; XXX explain this 
+             ;; XXX are there sensible defaults? What if I forget to provide? 
              :content-type {#"application/.*json" :json
                             #"application/edn"    :text}
 
@@ -278,7 +279,7 @@ and show you *_the most verbose_* use of the
              ;; Can be one of: String | js/ArrayBuffer | js/Blob | js/FormData | js/BufferSource | js/ReadableStream
              :body    "a string"    
              
-             XXX should :max-retries be at this level 
+             XXX should :max-retries be at this level? 
 
              ;; Optional: an area to put application-specific data 
              ;; If data is supplied here, it will probably be used later within the 
@@ -288,7 +289,7 @@ and show you *_the most verbose_* use of the
              :context {:max-retries  5
                             :description  "Loading articles"}
                             
-             ;; More obscure. The following are optional. 
+             ;; The following are optional and more obscure. 
              ;; See https://developer.mozilla.org/en-US/docs/Web/API/Request#Properties
              :credentials   "omit"      
              :redirect      "manual"       
@@ -296,7 +297,7 @@ and show you *_the most verbose_* use of the
              :cache         "no-store" 
              :referrer      "no-referrer" 
              
-             ;; Optional. See https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
+             ;; See https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
              :integrity     "sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE="}))
 ----
 
@@ -352,7 +353,7 @@ XXX max-retries above. Is right?
 
 == Using A Profile
 
-Here's an example of using the *_Profile_* we registered above: 
+Here's an example of using the *_Profile_* with id `:xyz` which we registered above: 
 [source, Clojure]
 ----
 {:http {:action :GET
@@ -361,8 +362,8 @@ Here's an example of using the *_Profile_* we registered above:
 ----
 Wait! Where? That's the same as before!
 
-If you look back, you'll see the *_Profile_* was registered with `:default? true` and 
-that means it will be used by default, but only if no Profile is explicitly provided. 
+Indeed. If you look back, you'll see the *_Profile_* `:xyz` was registered with `:default? true` 
+which means it will be used by default, but only if no Profile is explicitly provided. 
 
 Here's how to explicitly nominate a *_Profile_*: 
 [source, Clojure]
@@ -373,8 +374,8 @@ Here's how to explicitly nominate a *_Profile_*:
         :profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
 ----
 
-That key `:profiles` allows you to nominate a vector of previously registered *_Profile_* `ids`. The data
-(`:values`) associated with those *_Profile_*  `ids` will be added in the request.
+That new key `:profiles` allows you to nominate a vector of previously registered *_Profile_* `ids`. The 
+`:values` from those *_Profiles_* will be added in the request.
 
 Here's another example, but this time with multiple profile ids (a `vector` of them):
 [source, Clojure]
@@ -392,6 +393,8 @@ NOTE: Using `:profiles []` would mean no profiles, even if one of them was set a
 
 === Composing Profiles
 
+But combined how?
+
 When each profile holds a `:values` map, how should
 we "combine" these maps into a single, final map which is the `:http` specification?  
 
@@ -400,7 +403,7 @@ As a first approximation, imagine the process as a `reduce` across a collection 
 ----
 (reduce merge [map1, map2, map3])
 ----
-`merge` will accumulate the key/value pairs in the maps.
+This will accumulate the key/value pairs in the maps, into one final map.
 
 So, as an example: 
 [source, Clojure]
@@ -412,8 +415,8 @@ So, as an example:
 ----
 the result is `{:a 1 :b 11}`.
 
-Now, instead of `map1`, `map2` imagine  
-`:values` maps from `profile1`, `profile2`, etc. 
+Now, instead of `map1`, `map2`, imagine  
+we want to combine `profile1`, `profile2`, etc. 
 
 Example #1:
 [source, Clojure]
@@ -421,7 +424,7 @@ Example #1:
 (def profile1 {:action :GET})
 (def profile2 {:url "http://some.com/"})
 
-(reduce merge {}  [profile1, profile2])
+(reduce merge [profile1, profile2])
 ----
 and the result is:
 ```
@@ -429,17 +432,17 @@ and the result is:
  :url "http://some.com/"}
 ```
 
-So far, so good. This process is straightforward while ever the profiles have disjoint keys. But when that isn't true,
+So far, so good. This process is straightforward while ever the profiles have disjoint keys. But, when there are duplicates,
 we need a strategy to "combine" the values for duplicate keys. 
 
-.Where there are duplicate keys in two profiles the method by which their `values` are combined depends on the type of the values: 
-* if the values satisfy `str?`, then `str` is used to combine them
-* if the values satisfy `set?` then `clojure.set/union` is used 
-* if the values satisfy `map?`, then `merge` is used. (remember merge is shallow).
-* if the values satisfy `sequential?` then `conj` is used
+.Here are the rules for combining key values:  
+* if both values satisfy `str?`, then `str` is used to combine them
+* if both values satisfy `set?` then `clojure.set/union` is used 
+* if both values satisfy `map?`, then `merge` is used. (remember merge is shallow).
+* if both values satisfy `sequential?` then `conj` is used
 * otherwise last value wins
 
-Now imagine we have a special version of `merge` which implements these rules, called say `special-merge`. 
+Imagine we have a special version of `merge` which implements these rules, called say `special-merge`. 
 [source, Clojure]
 ----
 (def profile1 {:url "http://some.com/"})
@@ -451,101 +454,42 @@ and the result would be:
 ```
 {:url "http://some.com/blah"}
 ```
-because the values for the duplicate `:url` keys will be combined with `str`.
+because the values for the duplicate `:url` keys are strings, they will be combined with `str`.
 
 Similarly:
 [source, Clojure]
 ----
-(def profile1 {:params {: "http://some.com/"})
-(def profile2 {:url "blah"})
+(def profile1 {:params {:Cache-Control "no-cach"}})
+(def profile2 {:params {:Authorization "Basic YWxhZGRpbjpvcGVuc2VzYW1l"}})
 
 (reduce special-merge [profile1, profile2])
 ----
 and the result would be:
 ```
-{:url "http://some.com/blah"}
+{:params {:Cache-Control "no-cach"
+          :Authorization "Basic YWxhZGRpbjpvcGVuc2VzYW1l"}}
 ```
-because the values for the duplicate `:url` keys will be combined with `str`.
+because the values for the duplicate `:params` keys are maps and will be combined with `merge`.
 
-XXX no depth to maps 
-
-
-Example with shared keys:
+So when you nominate multiple profiles:
 [source, Clojure]
 ----
-(def map1 {:a 1})
-(def map2 {:a 11})
-
-(reduce merge {}  [map1, map2])
+{:http {:action :GET
+        ...
+        :profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
 ----
-the result is `{:a 11}`. The value in `map3` for the key `:a`
+the final `:http` spec will be a map which is the combination of all the 
+maps in nominated `:profiles`, and following the combination rules given above, as if
+`special-merge` was used. 
 
-Also, remember that `merge` is shallow. Consider:
-[source, Clojure]
-----
-(def map1 {a: {:aa 1})
-(def map2 {a: {:cc 1})
-
-(reduce merge {}  [map1, map2])
-----
-You might be tempted to think the result should be
-`{a: {:aa 1 :cc 1}}`
-but it is actually: `{a: {:cc 1}}`. 
-
-Why? Well, the `:a` value in `map2`, which is `{:cc 1}`, simply replaces **completely** the earlier value of `{:aa 1}`. The values `{:aa 1}` and `{:cc 1} are not themselves merged because `merge` is shallow and does not act deeply/recursively on the map values themselves.
 
 == Beyond This Default `merge` Behaviour
 
-Often, this default `merge` behaviour is good enough, particularly when the profiles have disjoint keys. 
-
-But, when the profiles have overlapping keys, it can be useful to take control of how map `values` are combined. 
-
-[source, Clojure]
-----
-(reg-event-fx
-   :register-my-http-profile
-   (fn [_ _]
-      {:http   {:reg-profile   :xyz
-      
-                ;; the values we are capturing and associating with this profile 
-                :values {;; compose the FSM
-                         :in-process    [:my-processor]
-                         :in-problem    [:generic-problem :extra "whatever"]
-                         :in-failed     [:my-special-failed]
-                         :in-cancelled  [:generic-cancelled]
-                         :in-teardown   [:generic-teardown]
-
-                         :timeout       3000
-
-                         :context  {:max-retries 2}}}}))
-                
-                ;; Optional, advanced feature.
-                ;; Profiles themselves can be combined/composed.
-                ;; In this section, you can specify how the `:values` in this
-                ;; profile should be combined with the values of another profile. 
-                ;; For each potential key in `:values` provide you can provide a two argument
-                ;; function to do the combining. 
-                ;; The two arguments given to this function will be:
-                ;;    (1) the value in "other" profile 
-                ;;    (2) the value in this profile
-                ;; 
-                ;; Example combining functions:
-                ;;    - `merge` would be useful if combining maps
-                ;;    - `conj` would be useful for combining vectors
-                ;;    - `str` would be useful for combining strings (URI?)
-                ;;    - `#(identity %2)` would cause the value in this profile
-                ;;      overwrite the value in the other profile. 
-                ;; 
-                :combine   {:params   merge
-                            :get      str}}}))
-----
-
-
 === Advanced Profiles
 
-Where you need to take control of the process you can use the libraries API function `with-profiles`
+Where you need to take detailed control of the "combining" process you can use the libraries API function `merge-profiles`
 ```
-{:http (-> (http/merge-profiles [:xyz :another])       ;; combines two profiles and returns a map
+{:http (-> (http/merge-profiles [:xyz :another])      ;; combines two profiles and returns a map
            (assoc-in [:fsm :in-setup]  [:special])    ;; manipulate the spec in the way you want 
            (update-in [:url] str "/path"))
 ```
