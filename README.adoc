@@ -96,7 +96,7 @@ browser-modern way to do the network layer.
 But, that's the end of the good news. The bad news is that you'll be 
 doing most of the work. 
 
-Parts of the FSM are left unimplemented, and you will you will need to fill in
+Parts of the FSM are left unimplemented, and you will need to fill in
 these blanks by writing a number of *_Logical State Handlers_*.
 
 A `Logical State Handler` provides the behaviour for a single
@@ -171,7 +171,7 @@ be brief.
 By *_a machine_*, I'm referring to the abstract concept of something which
 *_does something_*.
 
-With an FSM the *_machine_* has a set of *_Logical States_* which are way 
+With an FSM the *_machine_* has a set of *_Logical States_* which are a way 
 to reason about *_where_* a
 machine is within an overall process - a way to reason about what the machine is doing at some point of time.
 Each Logical State has discrete
@@ -562,7 +562,7 @@ For example:
     (thus taking down the twirly). 
     
     
-= Logical State Hander Recipes 
+= Logical State Handler Recipes 
 
 
 .To use this library, you'll:
