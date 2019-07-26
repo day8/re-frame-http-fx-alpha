@@ -331,7 +331,7 @@
          (swap-vals! request-id->request-and-controller
                      fsm-swap-fn request-id to-state merge-request-state)
          event-key (get fsm->event-keys state)
-         event (or (get request-state event-key) [:no-handler])
+         event (get-in request-state [:fsm event-key] [:no-handler])
          event' (conj event request-state)]
      (when (= :cancelled state)
        (.abort js-controller))
