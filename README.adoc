@@ -7,9 +7,9 @@
 :toc:
 :icons: font
 
-> Don't use this library - the code is not ready. However ... + 
-> We practice RDD (README-Driven Development), so this document describes what the  + 
-> library will deliver, and you can *_influence that design_* by reading it + 
+> Don't use this library - the code is not ready.  + 
+> However ... we practice RDD (README-Driven Development) and this document describes + 
+> what you'll be getting. You can *_influence our design_* by reading it + 
 > and then opening an issue with your thoughts, ideas or unhandled use cases. + 
 > Or, more casually, tweet me @wazound
 
