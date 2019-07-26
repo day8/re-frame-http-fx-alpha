@@ -837,11 +837,14 @@ Example implementation:
 
 === Notes
 
-XXX note somewhere you can supply multiple requests ... a vector
-
-XXX Add note that `fetch` doesn't work on IE.  So you'll need to provide a polyfil if you target that XXX.
-
-XXX add optional  `:cancel` event handler ?? + 
-XXX add an interceptor to assert the correctness of the Transitions - Logical State Handlers + 
+.XXX:
+* split the recipies into their own docs in /docs
+* FAQ for file upload - reference example application 
+* Talk about the two approaches to switching tabs
+* Nine states of UI
+* note somewhere you can supply multiple requests ... a vector
+* Add note that `fetch` doesn't work on IE.  So you'll need to provide a polyfil if you target IE.
+* add optional  `:cancel` event handler ?? 
+* ??? add an interceptor to assert the correctness of the Transitions - Logical State Handlers
 
 
