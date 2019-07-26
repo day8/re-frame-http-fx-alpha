@@ -8,8 +8,8 @@
 :icons: font
 
 > Don't use this library - the code is not ready. However ... + 
-> We practice RDD (README-Driven Development ©), so this document describes what the  + 
-> library will deliver, and you can probably *_influence the  design_* by reading it + 
+> We practice RDD (README-Driven Development), so this document describes what the  + 
+> library will deliver, and you can *_influence that design_* by reading it + 
 > and then openning an issue with your thoughts, ideas or unhandled usecases. + 
 > Or, more casually, tweet me @wazound
 
@@ -63,12 +63,12 @@ Here's a re-frame event handler returning an effect keyed `:http` (see the last 
     ;; Note the following :http effect
     {:http {:action :GET 
             :url    "http://api.something.com/articles/"
-            :path   [:put :response :data :at :this :path :in :app-db]}}))
+            :path    [:a :path :within :app-db]}}))
 ----
 
 
 That `:http` effect will do a HTTP GET and place any response data into
-`app-db` at the given path.
+`app-db` at the given `:path`.
 
 But wait, there's more.
 
@@ -235,12 +235,13 @@ and show you *_the most verbose_* use of the
 (reg-event-fx
   :request-articles
   (fn [_ _]
-    {:http  {:action :GET 
+    {:http  {:action :GET     ;; can be :PUT :POST  :HEAD etc
+    
              :url    "http://api.something.com/articles/"
              
-             ;; Optional. The path within `app-db` to which request related data should be put
-             ;; See section in these docs called `path state` XXX for more details 
-             :path [:put :response :data :at :this :path :in :app-db]
+             ;; Optional. The path within `app-db` to which request related data should be written
+             ;; The map at this location is known as `path-state`
+             :path [:a :path :within :app-db]
              
              
              ;; Compose the FSM by nominating the `Logical State handlers`. 
@@ -332,31 +333,27 @@ it with certain specification values:
    :register-my-http-profile
    (fn [_ _]
 
-      {:http   {;; Notice the use of `:reg-profile`
-                ;; The value `:xyz` is the `id` of the profile being registered
-                ;; The special value of `:default` says that this profile
-                ;; should be used for all requests, unless otherwise overridden.
-                ;;  You can register multiple profiles
-                
-                :reg-profile   :xyz
+      {:http   {;; the action is to register a profile
+                :action  :reg-profile
+      
+                ;; how we will indentify this profile later
+                :id      :xyz
 
-                ;; Sets this profile as the 'default'.
+                ;; Optional. Set this profile as the 'default'.
                 :default? true
       
-                ;; the values we are capturing and associating with this profile 
-                :values {
-                          ;; compose the FSM handlers
-                          :in-process    [:my-processor]
-                          :in-problem    [:generic-problem :extra "whatever"]
-                          :in-failed     [:my-special-failed]
-                          :in-cancelled  [:generic-cancelled]
-                          :in-teardown   [:generic-teardown]
-
+                ;; what :http values are associating with this profile 
+                :values {:url "http:/some.com/base"
+                         :fsm {:in-process    [:my-processor]
+                               :in-problem    [:generic-problem :extra "whatever"]
+                               :in-failed     [:my-special-failed]
+                               :in-cancelled  [:generic-cancelled]
+                               :in-teardown   [:generic-teardown]}
                           :timeout       3000
-
                           :context  {:max-retries 2}}}}))
 ----
 
+XXX see max-retries above 
 
 == Using A Profile
 
