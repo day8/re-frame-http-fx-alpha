@@ -10,7 +10,7 @@
 > Don't use this library - the code is not ready. However ... + 
 > We practice RDD (README-Driven Development), so this document describes what the  + 
 > library will deliver, and you can *_influence that design_* by reading it + 
-> and then openning an issue with your thoughts, ideas or unhandled usecases. + 
+> and then opening an issue with your thoughts, ideas or unhandled use cases. + 
 > Or, more casually, tweet me @wazound
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
@@ -67,7 +67,7 @@ Here's a re-frame event handler returning an effect keyed `:http` (see the last 
 ----
 
 
-That `:http` effect will do a HTTP GET and place any response data into
+That `:http` effect will do an HTTP GET and place any response data into
 `app-db` at the given `:path`.
 
 But wait, there's more.
@@ -106,7 +106,7 @@ A `Logical State Handler` provides the behaviour for a single
 *_Logical State_* in the FSM.  To help you, this library will provide "a recipe"
 for each of these handlers, describing what your implementation might reasonably 
 do. So, for example, in the `Failed` state, the recipe might 
-say that you "perform error loging and error reporting to the user" and "recover the application 
+say that you "perform error logging and error reporting to the user" and "recover the application 
 into a stable state, in light of the failure".
 
 Of course, only
@@ -129,7 +129,7 @@ Later, once you have written the necessary set of `Logical State Handlers`, you
 *_compose them to form a functioning FSM_*. And, because this is a ClojureScript
 library, this composition happens in a *_data oriented_* way.
 
-If your application's needs are suffiently complicated, you can create
+If your application's needs are sufficiently complicated, you can create
 multiple FSM compositions within the one app, with each configuration designed
 for a different kind of request.
 
@@ -242,8 +242,7 @@ and show you *_the most verbose_* use of the
              ;; Optional. The path within `app-db` to which request related data should be written
              ;; The map at this location is known as `path-state`
              :path [:a :path :within :app-db]
-             
-             
+ 
              ;; Compose the FSM by nominating the `Logical State handlers`. 
              ;; Look back at the FSM diagram and at the boxes which represent 
              ;; Logical States.
@@ -267,8 +266,8 @@ and show you *_the most verbose_* use of the
                           "Cache-Control"  "no-cache"}
 
              ;; Where there is a body to the response, fetch will automatically 
-             ;; process that body acording to mime type provided. 
-             ;; XXX
+             ;; process that body according to mime type provided. 
+             ;; XXX explain this 
              :content-type {#"application/.*json" :json
                             #"application/edn"    :text}
 
@@ -279,9 +278,7 @@ and show you *_the most verbose_* use of the
              ;; Can be one of: String | js/ArrayBuffer | js/Blob | js/FormData | js/BufferSource | js/ReadableStream
              :body    "a string"    
              
-
-             
-             XXX I think :max-retries should be out here
+             XXX should :max-retries be at this level 
 
              ;; Optional: an area to put application-specific data 
              ;; If data is supplied here, it will probably be used later within the 
@@ -303,14 +300,12 @@ and show you *_the most verbose_* use of the
              :integrity     "sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE="}))
 ----
 
-XXX add optional  `:cancel` event handler ?? + 
-XXX add an interceptor to assert the correctness of the Transitions - Logical State Handlers + 
 
 While this specification offers us a lot of flexibility, we clearly don't want to repeat
 this much specification every time. Mainly because, time after time,
 we'll likely want the same headers, params and `Logical State handers`.
 
-How do we avoid boilerplate and repertition?
+How do we avoid boilerplate and repartition?
 
 == Profiles
 
@@ -336,7 +331,7 @@ it with certain specification values:
       {:http   {;; the action is to register a profile
                 :action  :reg-profile
       
-                ;; how we will indentify this profile later
+                ;; how we will identify this profile later
                 :id      :xyz
 
                 ;; Optional. Set this profile as the 'default'.
@@ -580,7 +575,7 @@ XXX better names? Maybe `lib-state` and `app-state`. Not keen on `app-state`.  M
   
 Typically, the `in-setup` LogicalStateHandler initialises the `app-state` map, and it is 
 then maintained across the request handling process by the various FSM handlers. Ultimately, it
-will contain the response data or an error. Your views will be susbscribed to this map and will 
+will contain the response data or an error. Your views will be subscribed to this map and will 
 render it appropriately. 
 
 An example of the `app-state` map. 
@@ -840,9 +835,13 @@ Example implementation:
 ----
 
 
-=== More
+=== Notes
 
 XXX note somewhere you can supply multiple requests ... a vector
 
 XXX Add note that `fetch` doesn't work on IE.  So you'll need to provide a polyfil if you target that XXX.
+
+XXX add optional  `:cancel` event handler ?? + 
+XXX add an interceptor to assert the correctness of the Transitions - Logical State Handlers + 
+
 
