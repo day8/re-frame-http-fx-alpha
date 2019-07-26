@@ -296,11 +296,11 @@ and show you *_the most verbose_* use of the
 XXX add optional  `:cancel` event handler ?? + 
 XXX add an interceptor to assert the correctness of the Transitions - Logical State Handlers + 
 
-While this specification offers a lot of flexibility, we clearly don't want to repeat
-this much every time. Mainly because, time after time,
+While this specification offers us a lot of flexibility, we clearly don't want to repeat
+this much specification every time. Mainly because, time after time,
 we'll likely want the same headers, params and `Logical State handers`.
 
-How do we avoid repertition? 
+How do we avoid boilerplate and repertition?
 
 == Profiles
 
@@ -388,10 +388,10 @@ NOTE: Using `:profiles []` would mean no profiles, even if one of them has `:def
 
 === Composing Profiles
 
-When each profile holds a `:values` map and we must compose multiple of them, how should
-we "combine" the many maps into one, final map to form the `:http` specification?  
+When each profile holds a `:values` map, how should
+we "combine" the many of these maps into one, final map to form the `:http` specification?  
 
-Answer: imagine a `reduce` across a seq of maps, using `merge`:
+Answer: as a first approximation, imagine a `reduce` across a seq of maps, using `merge`:
 [source, Clojure]
 ----
 (reduce merge {}  [map1, map2, map3])
@@ -402,30 +402,26 @@ it was actually `profile`, `profile2, etc.
 Example #1:
 [source, Clojure]
 ----
-(def map1 {a: 1})
-(def map2 {b: 2})
-(def map3 {c: 11})
+(def map1 {:a 1})
+(def map2 {:b 2})
+(def map3 {:c 11})
 
 (reduce merge {}  [map1, map2, map3])
 ----
-the result is `{a: 1  :b 2  :c 11}`.  
+the result is `{:a 1  :b 2  :c 11}`.
 
-The process is straightforward while ever the maps have disjoint keys. But when that isn't true,
-values in "later" maps overwrite values in "earlier" ones. 
+This process is straightforward whileever the maps have disjoint keys. But when that isn't true,
+`merge's` behaviour is to use values in "later" maps to overwrite values in "earlier" ones. Like this ...
 
-Example #2:
+Example with shared keys:
 [source, Clojure]
 ----
-(def map1 {a: 1})
-(def map2 {b: 2})
-(def map3 {a: 11})
+(def map1 {:a 1})
+(def map2 {:a 11})
 
-(reduce merge {}  [map1, map2, map3])
+(reduce merge {}  [map1, map2])
 ----
-the result is `{a: 11  :b 2}`. 
-
-You'll notice that the key `:a` is in both `map1` and `map3`. In the result, `:a` has the value `11`, not `1`, 
-because the value in `map3` overwrites the earlier value in `map1`.
+the result is `{:a 11}`. The value in `map3` for the key `:a`
 
 Also, remember that `merge` is shallow. Consider:
 [source, Clojure]
@@ -489,6 +485,17 @@ But, when the profiles have overlapping keys, it can be useful to take control o
 
 XXX is there a default "combiner" for each key in `:values`? + 
 XXX where is this documented? + 
+
+XXX you can supply multiple requests ... a vector
+
+For each key/value pair ... 
+
+.Where there are duplicate keys in two maps being merged the method by which the `values` are combined depends on the type of the values: 
+* if the values are strings then `str` is used to combine them
+* if the values satisfy `map?` then `merge` is used, but, again, only to one level
+* if the values are collection then XXX is used  ... seq? 
+
+XXX no this won't work. The vectors for State Handlers will be conj and we don't want that.  
 
 = About State
 
