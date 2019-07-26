@@ -7,9 +7,10 @@
 :toc:
 :icons: font
 
-> Don't use this library - the code is not ready. But ... + 
-> We practice RDD (README-Driven Development ©), so you can, right now, *_influence the evolving design_* by + 
-> reading this document and then openning an issue with your thoughts, ideas or unhandled usecases. + 
+> Don't use this library - the code is not ready. However ... + 
+> We practice RDD (README-Driven Development ©), so this document describes what the  + 
+> library will deliver, and you can probably *_influence the  design_* by reading it + 
+> and then openning an issue with your thoughts, ideas or unhandled usecases. + 
 > Or, more casually, tweet me @wazound
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
@@ -37,7 +38,7 @@ and possible retries but, on top of that, there's also the
 error recovery, logging, statistics gathering, etc. 
 
 Many programmers instinctively shy away from the tentacles of this complexity,
-pragmatically preferring naive but simple solutions. And yet, even accepting
+pragmatically preferring naive but simple solutions. And yet, even after accepting
 that trade-off, they can find themselves with an uncomfortable amount of
 repetition and boilerplate.
 
@@ -66,8 +67,8 @@ Here's a re-frame event handler returning an effect keyed `:http` (see the last 
 ----
 
 
-That `:http` effect will do a GET and place any response data into
-`app-db` at the given path. 
+That `:http` effect will do a HTTP GET and place any response data into
+`app-db` at the given path.
 
 But wait, there's more.
 
@@ -82,7 +83,7 @@ request process. However, as you'll soon see, there's no magic happening to
 achieve the outcome. You'll need to *_compose the right defaults_*.
 
 The cost? Some upfront learning so you can fashion these
-*_right defaults_* for your application. Let us begin the learning now ...
+*_right defaults_* for your application. Let us begin that learning now ...
 
 == An Overview
 
@@ -103,9 +104,9 @@ these blanks by writing a number of *_Logical State Handlers_*.
 
 A `Logical State Handler` provides the behaviour for a single
 *_Logical State_* in the FSM.  To help you, this library will provide "a recipe"
-for each handler, describing what your implementation might reasonably be
-expected to do. So, for example, in the `Failed` state, the recipe might 
-say that you "perform error reporting" and "recover the application 
+for each of these handlers, describing what your implementation might reasonably 
+do. So, for example, in the `Failed` state, the recipe might 
+say that you "perform error loging and error reporting to the user" and "recover the application 
 into a stable state, in light of the failure".
 
 Of course, only
@@ -128,7 +129,7 @@ Later, once you have written the necessary set of `Logical State Handlers`, you
 *_compose them to form a functioning FSM_*. And, because this is a ClojureScript
 library, this composition happens in a *_data oriented_* way.
 
-If your application's needs are complicated, you can create
+If your application's needs are suffiently complicated, you can create
 multiple FSM compositions within the one app, with each configuration designed
 for a different kind of request.
 
@@ -140,23 +141,24 @@ Finally, let's talk about state.
 
 Each FSM instance has some
 working state, which we call `request-state`. In addition, there will be
-some state stored within `app-db` which is also associated with a request. Your
-`Logical State handlers` will be responsible for pushing/projecting parts of
-`request-state` through into `app-db`, so that your UI can reflect the state of
+some state stored within `app-db` which is also associated with a 
+request - we call that `path-state`. Your
+`Logical State handlers`are responsible for pushing/projecting parts of
+`request-state` through into `path-state`, so that your UI can render the state of
 the request. Again, only you, the application programmer, know how you want this
-done, although we will certainly be suggesting some useful patterns. For
-example, you might write a `:retrying?` value of `true` into `app-db` which then
+done, although we will certainly be suggesting some patterns. For
+example, you might write a `:retrying?` value of `true` into `path-state` which then
 causes the UI to render "Sorry about the delay. There was a problem with the
 network connection, so we're trying again".
 
-So, the plan from here is: 
+So, in summary: 
 
 * you should get to know the FSM topology (in the next section)
 * you will implement the blank parts of the FSM but writing a set of
 `Logical State handlers`, following the recipe for each.
 * you will *_compose an ensemble_* of these `Logical State handlers` to form a FSM
-* your FSM will likely push/project aspects of `request-state` into `app-db` 
-* you will write views in terms of what's projected into `app-db`, to show the
+* your FSM will likely push/project aspects of `request-state` into `path-state` 
+* you will write views in terms of what's in `path-state`, to show the
 user what's happening
 * when you make an HTTP request, you'll be
 nominating which FSM to use (or you will implicitly be using your default FSM)
