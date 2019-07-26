@@ -7,9 +7,10 @@
 :toc:
 :icons: font
 
-> This library is under development, so don't try to use it yet. + 
-> But this README/tutorial explains how it will work + 
-> Have a read and give us your ideas or critique. Or, more casually, tweet me @wazound
+> This library is still under development, so don't try to use it yet. + 
+> But you can still give us feedback. Influence us with your ideas and usecases!  + 
+> We use README-driven development, so this document is getting quite complete. + 
+> Have a read and open an issue with your thoughts, ideas or critique. Or, more casually, tweet me @wazound
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
@@ -17,6 +18,8 @@ image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", 
 == Easy and Robust HTTP Requests
 
 A re-frame library for performing HTTP requests using an effect with key `:http`
+
+This is our experienced-based improvement on the original [re-frame-http-fx library](https://github.com/Day8/re-frame-http-fx).
 
 == Overview
 
@@ -50,8 +53,7 @@ sprinkles. We're not monsters.
 
 == An Indicative Code Fragment 
 
-Here's a re-frame event handler returning an effect keyed `:http`. 
-
+Here's a re-frame event handler returning an effect keyed `:http` (see the last two lines):
 [source, Clojure]
 ----
 (ref-event-fx 
@@ -63,7 +65,7 @@ Here's a re-frame event handler returning an effect keyed `:http`.
 ----
 
 
-That `:http` effect will GET from the given URL and place any response data into
+That `:http` effect will do a GET and place any response data into
 `app-db` at the given path. 
 
 But wait, there's more.
@@ -78,9 +80,8 @@ So, by using just two lines of code - simple ones at that - you'll get a robust 
 request process. However, as you'll soon see, there's no magic happening to
 achieve the outcome. You'll need to *_compose the right defaults_*.
 
-The cost - and there is *_always_* a cost for abstraction - is the 
-upfront learning needed to fashion these
-*_right defaults_*. Let's begin that learning process now ...
+The cost? Some upfront learning so you can fashion these
+*_right defaults_* for your application. Let us begin the learning now ...
 
 == An Overview
 
@@ -96,18 +97,18 @@ browser-modern way to do the network layer.
 But, that's the end of the good news. The bad news is that you'll be 
 doing most of the work. 
 
-Parts of the FSM are left unimplemented, and you will need to fill in
+Most parts of the FSM are left unimplemented, and you will need to fill in
 these blanks by writing a number of *_Logical State Handlers_*.
 
 A `Logical State Handler` provides the behaviour for a single
-*_Logical State_* in the FSM.  To help you, this library provides "a recipe"
+*_Logical State_* in the FSM.  To help you, this library will provide "a recipe"
 for each handler, describing what your implementation might reasonably be
 expected to do. So, for example, in the `Failed` state, the recipe might 
 say that you "perform error reporting" and "recover the application 
 into a stable state, in light of the failure".
 
 Of course, only
-you, the application programmer, know how to make "a recipe" happen correctly for your
+you, the application programmer, know how to implement "a recipe" correctly for your
 application.  And that's precisely why the FSM's implementation is left incomplete 
 and why you are asked to fill in the blanks.
 
