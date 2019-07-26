@@ -7,10 +7,10 @@
 :toc:
 :icons: font
 
-> This library is still under development, so don't try to use it yet. + 
-> But you can still give us feedback. Influence us with your ideas and usecases!  + 
-> We use README-driven development, so this document is getting quite complete. + 
-> Have a read and open an issue with your thoughts, ideas or critique. Or, more casually, tweet me @wazound
+> This library is still under development. Don't try to use it yet. + 
+> *But* you can influence us with your ideas and usecases!  + 
+> We use README-driven development, and this document is getting close to complete. + 
+> Please have a read and open an issue with your thoughts, ideas or critique. Or, more casually, tweet me @wazound
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
