@@ -375,7 +375,7 @@ Here's how to explicitly nominate a *_Profile_*:
 {:http {:action :GET
         :url    "http://api.endpoint.com/articles/"
         :path   [:somewhere :in :app-db]
-        :with-profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
+        :profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
 ----
 
 That key `:profiles` allows you to nominate a vector of previously registered *_Profile_* `ids`. The data
@@ -384,42 +384,96 @@ That key `:profiles` allows you to nominate a vector of previously registered *_
 Here's another example, but this time with multiple profile ids (a `vector` of them):
 [source, Clojure]
 ----
-{:http {:get      "http://api.endpoint.com/articles/"
-        :path     [:put :response :data :at :this :path :in :app-db]
+{:http {:action :GET
+        :url    "http://api.endpoint.com/articles/"
+        :path   [:somewhere :in :app-db]
         :profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
 ----
 
 The data in the `:values` for the nominated profiles will be composed to form the
-final `:http` specification. 
+final `:http` specification.
 
-NOTE: Using `:profiles []` would mean no profiles, even if one of them has `:default true`. 
+NOTE: Using `:profiles []` would mean no profiles, even if one of them was set as the `:default`. 
 
 === Composing Profiles
 
 When each profile holds a `:values` map, how should
-we "combine" the many of these maps into one, final map to form the `:http` specification?  
+we "combine" these maps into a single, final map which is the `:http` specification?  
 
-Answer: as a first approximation, imagine a `reduce` across a seq of maps, using `merge`:
+As a first approximation, imagine the process as a `reduce` across a collection of maps, using `clojure.core/merge`:
 [source, Clojure]
 ----
-(reduce merge {}  [map1, map2, map3])
+(reduce merge [map1, map2, map3])
 ----
-`merge` will accumulate the key/value pairs. Instead of `map1`, `map2`, etc, imagine that 
-it was actually `profile`, `profile2, etc.
+`merge` will accumulate the key/value pairs in the maps.
+
+So, as an example: 
+[source, Clojure]
+----
+(def map1 {:a 1})
+(def map2 {:b 11})
+
+(reduce merge [map1, map2])
+----
+the result is `{:a 1 :b 11}`.
+
+Now, instead of `map1`, `map2` imagine  
+`:values` maps from `profile1`, `profile2`, etc. 
 
 Example #1:
 [source, Clojure]
 ----
-(def map1 {:a 1})
-(def map2 {:b 2})
-(def map3 {:c 11})
+(def profile1 {:action :GET})
+(def profile2 {:url "http://some.com/"})
 
-(reduce merge {}  [map1, map2, map3])
+(reduce merge {}  [profile1, profile2])
 ----
-the result is `{:a 1  :b 2  :c 11}`.
+and the result is:
+```
+{:action :GET
+ :url "http://some.com/"}
+```
 
-This process is straightforward whileever the maps have disjoint keys. But when that isn't true,
-`merge's` behaviour is to use values in "later" maps to overwrite values in "earlier" ones. Like this ...
+So far, so good. This process is straightforward while ever the profiles have disjoint keys. But when that isn't true,
+we need a strategy to "combine" the values for duplicate keys. 
+
+.Where there are duplicate keys in two profiles the method by which their `values` are combined depends on the type of the values: 
+* if the values satisfy `str?`, then `str` is used to combine them
+* if the values satisfy `set?` then `clojure.set/union` is used 
+* if the values satisfy `map?`, then `merge` is used. (remember merge is shallow).
+* if the values satisfy `sequential?` then `conj` is used
+* otherwise last value wins
+
+Now imagine we have a special version of `merge` which implements these rules, called say `special-merge`. 
+[source, Clojure]
+----
+(def profile1 {:url "http://some.com/"})
+(def profile2 {:url "blah"})
+
+(reduce special-merge [profile1, profile2])
+----
+and the result would be:
+```
+{:url "http://some.com/blah"}
+```
+because the values for the duplicate `:url` keys will be combined with `str`.
+
+Similarly:
+[source, Clojure]
+----
+(def profile1 {:params {: "http://some.com/"})
+(def profile2 {:url "blah"})
+
+(reduce special-merge [profile1, profile2])
+----
+and the result would be:
+```
+{:url "http://some.com/blah"}
+```
+because the values for the duplicate `:url` keys will be combined with `str`.
+
+XXX no depth to maps 
+
 
 Example with shared keys:
 [source, Clojure]
@@ -491,29 +545,12 @@ But, when the profiles have overlapping keys, it can be useful to take control o
                             :get      str}}}))
 ----
 
-XXX is there a default "combiner" for each key in `:values`? + 
-XXX where is this documented? + 
-
-XXX you can supply multiple requests ... a vector
-
-For each key/value pair ... 
-
-.Where there are duplicate keys in two maps being merged the method by which the `values` are combined depends on the type of the values: 
-* if the values are strings then `str` is used to combine them
-* if the values are a set then `clojure.set/union`
-* if the values is a collection then combined via:
-** maps - merge
-** vectors and lists - conj 
-* if the values satisfy `map?` then `merge` is used, but, again, only to one level
-* if the values are collection then XXX is used  ... seq? 
-
-XXX no depth to maps 
 
 === Advanced Profiles
 
 Where you need to take control of the process you can use the libraries API function `with-profiles`
 ```
-{:http (-> (http/with-profiles [:xyz :another])       ;; combines two profiles and returns a map
+{:http (-> (http/merge-profiles [:xyz :another])       ;; combines two profiles and returns a map
            (assoc-in [:fsm :in-setup]  [:special])    ;; manipulate the spec in the way you want 
            (update-in [:url] str "/path"))
 ```
@@ -805,4 +842,7 @@ Example implementation:
 
 === More
 
-XXX Add note that `fetch` doesn't work on IE.  So you'll need to provide a 
+XXX note somewhere you can supply multiple requests ... a vector
+
+XXX Add note that `fetch` doesn't work on IE.  So you'll need to provide a polyfil if you target that XXX.
+
