@@ -48,14 +48,14 @@
 (defn request->js-init
   "Returns an init options js/Object to use as the second argument to js/fetch."
   [{:keys [method headers body mode credentials cache redirect referrer integrity] :as request}
-   controller]
+   js-controller]
   (let [mode (or mode "same-origin")
         credentials (or credentials "include")
         redirect (or redirect "follow")]
     (cond->
       #js {;; There is always a controller, as in our impl all requests can be
            ;; aborted.
-           :signal      (.-signal controller)
+           :signal      (.-signal js-controller)
 
            ;; There is always a method, as dispatch is via sub-effects like :get.
            :method      method
