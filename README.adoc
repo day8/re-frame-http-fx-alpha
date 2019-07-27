@@ -284,7 +284,7 @@ and show you *_the most verbose_* use of the
 
              ;; Optional: an area to put application-specific data 
              ;; If data is supplied here, it will probably be used later within the 
-             ;; implementation of a "state handler". For example "description"
+             ;; implementation of a "Logical State Handler". For example "description"
              ;; might be a useful string for displaying to the users in the UI or
              ;; to put in errors or logs.
              :context {:description  "Loading articles"
@@ -304,15 +304,15 @@ and show you *_the most verbose_* use of the
 ----
 
 
-While this specification offers us a lot of flexibility, we clearly don't want to repeat
-this much specification every time. Mainly because, time after time,
-we'll likely want the same headers, params and `Logical State handers`.
+While all this specification offers useful flexibility, we clearly don't want to repeat
+this much every time. Particularly because
+we'll often want the same headers, params and `Logical State handers`.
 
-How do we avoid boilerplate and repartition?
+How do we avoid boilerplate and repertition?
 
 == Profiles
 
-A *_Profile_* associates an `id` with a fragment of an `:http` specification. 
+A *_Profile_* associates an `id` with a fragment of `:http` specification. 
 
 You "register" one or more *_Profiles_*, typically on application 
 startup.
@@ -331,27 +331,28 @@ it with certain specification values:
    :register-my-http-profile
    (fn [_ _]
 
-      {:http   {;; the action is to register a profile
+      {:http   {;; The `:action` is no longer a verb
+                ;; Instead it indicates we are registering a profile
                 :action  :reg-profile
       
-                ;; how we will identify this profile later
+                ;; This identifier will be used later 
                 :id      :xyz
 
-                ;; Optional. Set this profile as the 'default'.
+                ;; Optional. Set this profile as the 'default' one?
                 :default? true
       
-                ;; what :http values are associating with this profile 
-                :values {:url "http:/some.com/base"
+                ;; This is the important bit 
+                ;; This map captures the values associated with this profile.
+                :values {:url "http:/api.some.com/v2"
                          :fsm {:in-process    [:my-processor]
                                :in-problem    [:generic-problem :extra "whatever"]
                                :in-failed     [:my-special-failed]
                                :in-cancelled  [:generic-cancelled]
                                :in-teardown   [:generic-teardown]}
                           :timeout       3000
-                          :context  {:max-retries 2}}}}))
+                          :max-retries   2
+                          :context  {...}}}}))
 ----
-
-XXX max-retries above. Is right?
 
 == Using A Profile
 
@@ -362,7 +363,7 @@ Here's an example of using the *_Profile_* with id `:xyz` which we registered ab
         :url    "http://api.endpoint.com/articles/"
         :path   [:somewhere :in :app-db]}
 ----
-Wait! Where? That's the same as before!
+Wait! Is this a trick? That's the same three lines as before!
 
 Indeed. If you look back, you'll see the *_Profile_* `:xyz` was registered with `:default? true` 
 which means it will be used by default, but only if no Profile is explicitly provided. 
@@ -376,10 +377,10 @@ Here's how to explicitly nominate a *_Profile_*:
         :profiles [:xyz]}}     ;;  <--- NEW: THIS IS HOW WE SAY WHAT PROFILE(S) TO USE
 ----
 
-That new key `:profiles` allows you to nominate a vector of previously registered *_Profile_* `ids`. The 
-`:values` from those *_Profiles_* will be added in the request.
+That new key `:profiles` allows you to nominate a vector of previously registered *_Profile_* `ids`. The map
+of `:values` from those *_Profiles_* will be added into the `:http` specification. 
 
-Here's another example, but this time with multiple profile ids (a `vector` of them):
+Here's another example, but this time with multiple profile ids:
 [source, Clojure]
 ----
 {:http {:action :GET
@@ -388,26 +389,23 @@ Here's another example, but this time with multiple profile ids (a `vector` of t
         :profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
 ----
 
-The data in the `:values` for the nominated profiles will be composed to form the
-final `:http` specification.
+The map of `:values` in all nominated profiles will be composed into the 
+the `:http` specification.
 
-NOTE: Using `:profiles []` would mean no profiles, even if one of them was set as the `:default`. 
+NOTE: explicitly using `:profiles []` would mean no profiles. This is the way to NOT even use the default.
 
 === Composing Profiles
 
-But combined how?
+How are multiple profiles combined? 
 
-When each profile holds a `:values` map, how should
-we "combine" these maps into a single, final map which is the `:http` specification?  
-
-As a first approximation, imagine the process as a `reduce` across a collection of maps, using `clojure.core/merge`:
+As a first approximation, imagine the process as a `clojure.core/reduce` across a collection of maps, using `clojure.core/merge`:
 [source, Clojure]
 ----
 (reduce merge [map1, map2, map3])
 ----
 This will accumulate the key/value pairs in the maps, into one final map.
 
-So, as an example: 
+An example: 
 [source, Clojure]
 ----
 (def map1 {:a 1})
@@ -417,10 +415,8 @@ So, as an example:
 ----
 the result is `{:a 1 :b 11}`.
 
-Now, instead of `map1`, `map2`, imagine  
-we want to combine `profile1`, `profile2`, etc. 
-
-Example #1:
+Instead of `map1`, `map2`, imagine that we 
+combine `profile1`, `profile2`, like this:
 [source, Clojure]
 ----
 (def profile1 {:action :GET})
@@ -428,21 +424,23 @@ Example #1:
 
 (reduce merge [profile1, profile2])
 ----
-and the result is:
+with the result:
 ```
-{:action :GET
- :url "http://some.com/"}
+{
+ :action :GET
+ :url "http://some.com/"
+}
 ```
 
-So far, so good. This process is straightforward while ever the profiles have disjoint keys. But, when there are duplicates,
-we need a strategy to "combine" the values for duplicate keys. 
+While ever the profiles have disjoint keys, this is straightforward. But, when there are duplicate keys,
+we need a strategy to "combine" the coresponding values.
 
-.Here are the rules for combining key values:  
-* if both values satisfy `str?`, then `str` is used to combine them
-* if both values satisfy `set?` then `clojure.set/union` is used 
-* if both values satisfy `map?`, then `merge` is used. (remember merge is shallow).
-* if both values satisfy `sequential?` then `conj` is used
-* otherwise last value wins
+.Here are the rules:
+* if both values satisfy `str?`, then they will be combined with `str`
+* if both values satisfy `set?`, then they will be combined with `clojure.set/union`
+* if both values satisfy `map?`, then they will be combined with `merge` (remember merge is shallow).
+* if both values satisfy `sequential?`, then `conj` is used
+* otherwise, last value wins  (no combining)
 
 Imagine we have a special version of `merge` which implements these rules, called say `special-merge`. 
 [source, Clojure]
@@ -452,11 +450,11 @@ Imagine we have a special version of `merge` which implements these rules, calle
 
 (reduce special-merge [profile1, profile2])
 ----
-and the result would be:
+the result would be:
 ```
 {:url "http://some.com/blah"}
 ```
-because the values for the duplicate `:url` keys are strings, they will be combined with `str`.
+because the values for the duplicate `:url` keys are strings, they will be combined with `str` to form one string.
 
 Similarly:
 [source, Clojure]
@@ -466,62 +464,63 @@ Similarly:
 
 (reduce special-merge [profile1, profile2])
 ----
-and the result would be:
+the result would be:
 ```
 {:params {:Cache-Control "no-cach"
           :Authorization "Basic YWxhZGRpbjpvcGVuc2VzYW1l"}}
 ```
 because the values for the duplicate `:params` keys are maps and will be combined with `merge`.
 
-So when you nominate multiple profiles:
+So, when you nominate multiple profiles:
 [source, Clojure]
 ----
 {:http {:action :GET
         ...
-        :profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE
+        :profiles [:jwt-token :standard-parms :xyz]}}     ;;  <---- MULTIPLE PROFILES
 ----
-the final `:http` spec will be a map which is the combination of all the 
-maps in nominated `:profiles`, and following the combination rules given above, as if
-`special-merge` was used. 
+the final `:http` spec will be a map. And it will be as if it was formed
+using `special-merge` on all the `:values` maps from all the nominated profiles, 
+plus the map supplied for the `:http` itself as the last one. 
 
+=== Advanced Profile Combining
 
-== Beyond This Default `merge` Behaviour
-
-=== Advanced Profiles
-
-Where you need to take detailed control of the "combining" process you can use the libraries API function `merge-profiles`
+Where you need to take detailed control of the "combining" process you 
+can use this library's API function `merge-profiles`
 ```
-{:http (-> (http/merge-profiles [:xyz :another])      ;; combines two profiles and returns a map
-           (assoc-in [:fsm :in-setup]  [:special])    ;; manipulate the spec in the way you want 
+{:http (-> (merge-profiles [:xyz :another])         ;; combines these two profiles and returns a map
+           (assoc-in [:fsm :in-setup]  [:special])  ;; now manipulate the map in the way you want 
            (update-in [:url] str "/path"))
 ```
 
-= About State
+The function call `(http/merge-profiles [:xyz])` would just return
+`:values` map for that one profile. 
 
-XXX this section is messy and incomplete .... 
+= About State
 
 There are two kinds of State:
 
-* `request-state` is detail about a request, maintained by this library  in the
-   course of getting its job done. It represents the "working memory" of the FSM
-   and it only exists for the lifetime of a request. It includes data such as an
-   id, the current logical state of the FSM, the original request, current
-   number of retries, a trace history through the FSM including timings, etc.
-   This state is stored internally in the library and provided in the event
-   vector to *_Logical State Handlers_* for read-only purposes.
+* `request-state` is data for a single request and it maintained by this library. 
+   It only exists for the lifetime of a request.
+   This state is stored internally in the library and, although it is
+   provided in the event vector of *_Logical State Handlers_*, it is effectively 
+   read-only. 
+   It includes the 
+   request id, the current logical state of the FSM, the original request,
+   a trace history through the FSM including timings, etc.
+   
 
-* `path-state` - this is the application state which represents the request (not
-   the library's state). It is a small map of values which exists at a
-   particular path within `app-db` and the contents of this map is up to you,
+* `path-state` - this state is a map of values which exists at a particular 
+   path within `app-db`. It is the application's "materialised
+   view" of the `request-state`. 
+   The contents of this map is up to you,
    the writer of the application. It will be created and maintained by the
-   *_Logical State Handlers_* you write and it will be "a materialised
-   view" of the full `request-state`.
+   *_Logical State Handlers_* you write. 
   
-  
-Typically, the `in-setup` LogicalStateHandler initialises the `path-state` map, and it is 
+
+Typically, the `in-setup` LogicalStateHandler initialises `path-state`, and it is 
 then maintained across the request handling process by the various FSM handlers. Ultimately, it
 will contain the response data or an error. Your views will be subscribed to this map and will 
-render it appropriately. 
+render it appropriately for the user to view. 
 
 An example of the `path-state` map. 
 [source, Clojure]
@@ -535,12 +534,17 @@ An example of the `path-state` map.
   :cancelled?  false
   :description "Loading filtered thingos"
   
-  :error?      true
-  :error-description "Something bad happened"
+  :error   {
+     :title            "Error loading thingos"
+     :what-happened    "Couldn't load thingos from the server because it returned a status 500 error" 
+     :consequence      "This application can't display your thingos" 
+     :users-next-action "Please report this error to your help desk via email, with a screenshot. Perhaps try again later"} 
 }
 ----
 
 Remember, you design this map.  You initialise it in `in-setup`. You update it to reflect the state of the ongoing request. You create the subscriptions which deliver it to a view, and that view will render it. 
+
+XXX :context is put where?
 
 Note: none of this precludes you, for example, writing errors to a different place within app-db.  You write the LogicalStatehandlers. Your choice about how data flows into `app-db`. The proposal above is just one way to do it.
 
