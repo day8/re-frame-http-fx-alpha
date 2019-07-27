@@ -267,7 +267,7 @@ and show you *_the most verbose_* use of the
 
              ;; Where there is a body to the response, fetch will automatically 
              ;; process that body according to mime type provided. 
-             ;; XXX explain this 
+             ;; XXX Isaac we have to explain this 
              ;; XXX are there sensible defaults? What if I forget to provide? 
              :content-type {#"application/.*json" :json
                             #"application/edn"    :text}
@@ -279,15 +279,17 @@ and show you *_the most verbose_* use of the
              ;; Can be one of: String | js/ArrayBuffer | js/Blob | js/FormData | js/BufferSource | js/ReadableStream
              :body    "a string"    
              
-             XXX should :max-retries be at this level? 
+             ;; how many times should occurances like timeouts or HTTP status 503 be retried before failing
+             :max-retries  5
 
              ;; Optional: an area to put application-specific data 
              ;; If data is supplied here, it will probably be used later within the 
              ;; implementation of a "state handler". For example "description"
              ;; might be a useful string for displaying to the users in the UI or
              ;; to put in errors or logs.
-             :context {:max-retries  5
-                            :description  "Loading articles"}
+             :context {:description  "Loading articles"
+                       :dispatch-on-success  [:another event]
+                       :recover-to {[:where :I :store :the :panel :id] old-value}}
                             
              ;; The following are optional and more obscure. 
              ;; See https://developer.mozilla.org/en-US/docs/Web/API/Request#Properties
@@ -508,21 +510,20 @@ There are two kinds of State:
    This state is stored internally in the library and provided in the event
    vector to *_Logical State Handlers_* for read-only purposes.
 
-* `app-state` - this is the application state which represents the request (not
+* `path-state` - this is the application state which represents the request (not
    the library's state). It is a small map of values which exists at a
    particular path within `app-db` and the contents of this map is up to you,
    the writer of the application. It will be created and maintained by the
    *_Logical State Handlers_* you write and it will be "a materialised
    view" of the full `request-state`.
   
-XXX better names? Maybe `lib-state` and `app-state`. Not keen on `app-state`.  Maybe `your-state`  `ui-state`
   
-Typically, the `in-setup` LogicalStateHandler initialises the `app-state` map, and it is 
+Typically, the `in-setup` LogicalStateHandler initialises the `path-state` map, and it is 
 then maintained across the request handling process by the various FSM handlers. Ultimately, it
 will contain the response data or an error. Your views will be subscribed to this map and will 
 render it appropriately. 
 
-An example of the `app-state` map. 
+An example of the `path-state` map. 
 [source, Clojure]
 ----
 {
