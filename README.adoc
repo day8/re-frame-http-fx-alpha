@@ -549,17 +549,17 @@ XXX To avoid race conditions, should the booleans be false in absence via subscr
 XXX consider what else needs to happen to work well with `re-frame-async-flow`
 
 So, I'd like to stress two points already made:
-   - lifetime: `app-state` exists for as long as your application code says it should - it persists. Whereas 
+   - lifetime: `path-state` exists for as long as your application code says it should - it persists. Whereas 
      `request-state` is created and destroyed by this library - it is a means to an ends - it is transitory. 
-   - during the request process, `request-state` tends to be authoritative. : `app-state` is something 
+   - during the request process, `request-state` tends to be authoritative. : `path-state` is something 
      of a projection or materialised view of `request-state`. (Not entirely true but a useful mental model at
      this early stage in explanation)
 
-While `app-state` ....  there might need to be a `:loading?` value      set to true to indicate that the busy twirly should be kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the    `reguest-state` so that, again, the UI can show the user what is happening.  
+While `path-state` ....  there might need to be a `:loading?` value      set to true to indicate that the busy twirly should be kept up.  Or perhaps a `:retrying?` flag might need to be "projected" from the    `reguest-state` so that, again, the UI can show the user what is happening.  
 
-Ultimately, the most important part of this `app-state` is the (processed) response data itself. But there will be other information alongside it. For this reason, `presentation-state` is normally a map of values with a key for `response`, but it has other values.
+Ultimately, the most important part of this `path-state` is the (processed) response data itself. But there will be other information alongside it. For this reason, `presentation-state` is normally a map of values with a key for `response`, but it has other values.
 
-The `app-state` is managed by your `Logical State Handlers`. You control what data is projected from the `request-state` across into the `presentation-state`. Because you, the application programmer, knows what you want to set within `app-db`. You know how you want the UI to render the state of the request process.
+The `path-state` is managed by your `Logical State Handlers`. You control what data is projected from the `request-state` across into the `presentation-state`. Because you, the application programmer, knows what you want to set within `app-db`. You know how you want the UI to render the state of the request process.
 
 For example:
   - it is the job of the `in-setup` to initially create the  `XXX-state` assumed to be a map. 
@@ -572,7 +572,7 @@ For example:
 
 
 .To use this library, you'll:
-* design `app-state` and the views which render it (or simply use the default design suggested)
+* design `path-state` and the views which render it (or simply use the default design suggested)
 * implement your Logical State Handlers (or simply use the default Handlers provided)
 
 The Logical State Handlers you write are about "executing the behaviour" associated with being *_in_* a particular state within the FSM. They implement behaviour for one part of "the machine".
@@ -584,10 +584,10 @@ Recipes for each of the Logical State Handlers ...
 Overview: prepare the application for the pending HTTP request. 
 
 .Recipe:
-* establish initial `app-state` at the nominated `:path`
+* establish initial `path-state` at the nominated `:path`
 * optionally, if the application is to allow the user to cancel the request
 (e.g., via a button) then capture the `:request-id` of the request and assoc it
-into `app-state` for access within the view (which will dispatch a cancel request event with this id supplied).
+into `path-state` for access within the view (which will dispatch a cancel request event with this id supplied).
 * optionally, put up a twirly-busy-thing, perhaps with a description of the
 request: "Loading all the blah things", perhaps with a cancel button
 * optionally, cause the application to change panel or view to be ready for the
@@ -595,7 +595,7 @@ incoming response data.
 * trigger `:send` to cause the transition to `waiting` state. The transition will cause the `fetch` action which actually initiates the request.
 
 
-Views subscribed to this `app-state` will then render the UI, probably locking
+Views subscribed to this `path-state` will then render the UI, probably locking
 it up and allowing the user to see that a request is in-flight.
 
 XXX a panel might change .... perhaps the user clicked a button to "View Inappropriate", so the application will change panels to the inappropriate one (via a change in `app-db` state), AND also kickoff a server request to get the "inappropriates".
@@ -739,7 +739,7 @@ This state follows user cancellation.
 .Recipe:
 * put the application into a state consistent with the cancellation. What does
 the user see? What can they do next?
-* update `app-state`, maybe. 
+* update `path-state`, maybe. 
 * FSM trigger `:teardown`
 
 Example implementation:
@@ -762,7 +762,7 @@ As a result, in this state we handle any actions which have to happen irrespecti
 .Recipe:
 * take down the twirly 
 * accumulate and log final stats 
-* possible updates to `app-state`
+* possible updates to `path-state`
   * change `:loading?` to false
 * possible updates to `app-db` 
   * busy twirly removal
