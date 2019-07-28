@@ -139,6 +139,10 @@ And, if you use one regularly, you can nominate it to be
 
 Finally, let's talk about state. 
 
+XXX logical state
+
+XXX extended state 
+
 Each FSM instance has some
 working state, which we call `request-state`. In addition, there will be
 some state stored within `app-db` which is also associated with a 
@@ -167,24 +171,26 @@ nominating which FSM to use (or you will implicitly be using your default FSM)
 
 An HTTP request is a multi-step process which plays out over time.
 
-This library formalises that process as *_a Machine_* (the abstract concept of something which
-*_does something_*). And, specifically, it uses a Finte State Machine (FSM), which is a 
-Machine with a fixed, finite number of *_States_*. 
+This library formalises that process as *_a Machine_*. And, specifically, it 
+uses a Finte State Machine (FSM), which has a fixed, finite number of *_States_*. 
 
-When a *_Machine_* is in one of these *_State_*, it has discrete responsibilities, 
-concerns and behaviours. Because a FSM can only be in one State at a time, States are how we reason about what a Machine 
-is doing at particular point of time. 
+States allow us to reason about what a Machine 
+is doing because:
+* a FSM can only be in one State at a time
+* in each State the  *_Machine_* has discrete responsibilities, 
+concerns and behaviours
 
-When an FSM changes *_State_*, it goes from doing one thing to doing another thing. 
+So, when an FSM changes *_State_*, it goes from doing one thing to doing another thing. 
 
-Over time, when certain events occur, the Machine changes from one State to another. 
-These events are called *_Triggers_* and a change in State is called a *_Transition_*. Sometimes there are certain *_Actions_* (behaviour/computation) associated with 
+Over time, events occur and they can cause the Machine to changes from one State to another. 
+Such events are called *_Triggers_* and a change in State is called a *_Transition_*. 
+Sometimes there are certain *_Actions_* (behaviour/computation) associated with 
 a *_Transition_*. But, to repeat, the significant thing about a State change is that the Machine goes from
 doing one thing to doing another thing.
 
 .What does a Machine do in a State?:
 * it can do nothing (waiting for a Trigger) 
-* it can undertake "an activity" which naturally comes to an end (this ending might causes a Trigger)
+* it can undertake "an activity" which takes finite time and comes to an end (this ending might causes a Trigger)
 * it can undertake "an activity" which does not naturally come to an end (until there is a Trigger)
 * it can compute the next Trigger. These are sometimes called https://www.uml-diagrams.org/state-machine-diagrams.html#pseudostate[PseudoStates]. 
 
