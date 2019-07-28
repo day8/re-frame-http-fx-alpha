@@ -166,31 +166,26 @@ nominating which FSM to use (or you will implicitly be using your default FSM)
 
 == The FSM
 
-An HTTP request is a multi-step process which plays out over time.
+An HTTP request is a multi-step process which plays out over time. 
 
-We formalise it as *_a machine_*, and specifically a Finite State Machine
-(FSM). The Internet is full of good resources describing FSMs, so here I'll
-be brief.
+This library formalises that process as *_a Machine_* - the abstract concept of something which
+*_does something_*. And, specifically, it uses a Finte State Machine (FSM), which is a 
+Machine with a fixed, finite number of *_States_*.
 
-By *_a machine_*, I'm referring to the abstract concept of something which
-*_does something_*.
+When a *_Machine_* is in a *_State_*, it has discrete responsibilities, 
+concerns and behaviours. So, States are how we reason about what a Machine 
+is doing at particular point of time. When an FSM changes *_State_*, it goes from
+doing one thing to doing another thing. 
 
-With an FSM the *_machine_* has a set of *_Logical States_* which are a way 
-to reason about *_where_* a
-machine is within an overall process - a way to reason about what the machine is doing at some point of time.
-Each Logical State has discrete
-responsibilities, concerns and behaviours.
-
-*_Transitions_* cause an FSM to move from one Logical State to another - from one
-behaviour to another. Over time - and I really would like to stress this time
-bit - events occur which *_trigger_* Transitions. That means the machine goes from
+Over time, when certain events occur the Machine moves from one State to another. These events are called *_Triggers_* and the 
+State changes are called *_Transitions_*. Sometimes there are certain *_Actions_* (behaviour/computation) associated with 
+a *_Transition_*. But, to repeat, the significant thing about a State change is that the Machine goes from
 doing one thing to doing another thing.
 
-The `Logical State Handlers` you write are about "doing a thing" when in a
-particular state. And, so, they implement behaviour for one part of "the
-machine".
+The `Logical State Handlers` you will be asked to write are about "doing a thing" when the Machine is in a
+particular State. And, as a result, they implement the behaviour for one part of this library's FSM.
 
-The FSM at the core of this library is as follows: 
+The FSM at the core of this library: 
 
 image::http://www.plantuml.com/plantuml/png/ZLDDJnjD3BxFhx32vULLKL4lI564W4YeXnvGgTG3os5sno4ZTksjnmDQLVtldVreEbcQjBxPypoFF-ov2cf5OrCRvHQKeMHLRi1vmKez4vYjTmZOjDg1mr29R_kuCU7PKsl5DX2srl6hfoVOs3fWzbBQwlb9E99RSyq29xV9SgPQHVXk0E26nQ5CiElhQmFmbhvUhmViVdorWe-sRRixgzlBI_ZadxPwKqUSoSvWdxcpzG3xOOmPArdSeyPs0OFP08CBewrM6ViN_glrcXfVJFZ9FOo_4wumX86IyB_T0_ZxM5M83jrYqD-vX_I_e9Mq2rh0WDV9XJTuOxBSIsX71tIB81XQfe1GiklU5MJ9GLlR2i4hU8AaSkPAa_MwX0qBM23KLvPdg9XeF9-HRI6WlA3if8qn3_y_mcHd3oUxPJoUNSAjzJKw69KzlTZQku84lqKCUeoOhMi9Cvh97kUylLO2aeFti46jjiEKoXgRYNLnST7ZHzjZ2QfqEzeHrbvpc-GKL69bOq1GPcWiTGNrQXu3i02Ai80F1SKKhZYDqIPjayz_dYDBlmJr3NBKVyP72lsLXR29gRR__hHJbccXOtMdkVPyjdjdDYadsVvUOu0Fv-UdnofRMwgm7WQs15koQEBsHne3Ia6AqdYoYgwWFZej-zG0vFTzT0Vj3bVGq4xEd7Up-u0P4vqnMNnEoVxW4XmJcYpzlBAtu6m2VmURB3Il8_it2Or1XJjpXUHYK_y4[FSM,600]
 
@@ -199,13 +194,12 @@ Notes:
 
 * to use this library, you'll need to understand this FSM
 * the boxes in the diagram represent the FSM's *_Logical States_*
-* the lines between the boxes show allowed changes between *_Logical States_*,
-known as *_Transitions_*
+* the lines between the boxes show what *_Transitions_* are allowed between *_Logical States_*
 * the names on those lines are the *_Triggers_* (the event which causes the
 Transition to happen)
 * when you write a `Logical State Handler` you are implementing the behaviour
 for one of the boxes
-* the "happy path" is shown in blue  (both boxes and lines)
+* the "happy path" for a request is shown in blue  (both boxes and lines)
 * and, yes, there are variations on this FSM model of a request - this one is
 ours. We could, for example, have teased the "Problem" Logical State out into
 four distinct states: "Timed Out", "Connection Problem", "Recoverable Server
@@ -795,5 +789,5 @@ Example implementation:
 * Add note that `fetch` doesn't work on IE.  So you'll need to provide a polyfil if you target IE.
 * add optional  `:cancel` event handler ?? 
 * ??? add an interceptor to assert the correctness of the Transitions - Logical State Handlers
-
+* anything we should be doing around stubbing and testing?
 
