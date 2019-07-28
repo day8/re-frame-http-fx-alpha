@@ -1,6 +1,7 @@
 {:lein   true
 
- :nrepl  {:port 8777}
+ :nrepl  {:port 8230
+          :middleware [dirac.nrepl/middleware]}
 
  :builds {:browser-test
           {:target    :browser-test
@@ -8,7 +9,9 @@
            :runner-ns shadow.test.browser
            :test-dir  "resources/public/js/test"
            :devtools  {:http-root "resources/public/js/test"
-                       :http-port 8290}}
+                       :http-port 8290
+                       :preloads [devtools.preload
+                                  dirac.runtime.preload]}}
 
           :ci
           {:target    :karma

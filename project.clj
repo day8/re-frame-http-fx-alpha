@@ -8,6 +8,7 @@
                  [re-frame                   "0.10.8" :scope "provided"]]
 
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
+                                  [binaryage/dirac "1.3.10"]
                                   [karma-reporter "3.1.0"]]
                    :plugins      [[lein-shell "0.5.0"]]}}
 
