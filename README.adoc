@@ -163,17 +163,16 @@ user what's happening
 * when you make an HTTP request, you'll be
 nominating which FSM to use (or you will implicitly be using your default FSM)
 
-
 == The FSM
 
-An HTTP request is a multi-step process which plays out over time. 
+An HTTP request is a multi-step process which plays out over time.
 
-This library formalises that process as *_a Machine_* - the abstract concept of something which
-*_does something_*. And, specifically, it uses a Finte State Machine (FSM), which is a 
-Machine with a fixed, finite number of *_States_*.
+This library formalises that process as *_a Machine_* (the abstract concept of something which
+*_does something_*). And, specifically, it uses a Finte State Machine (FSM), which is a 
+Machine with a fixed, finite number of *_States_*. 
 
-When a *_Machine_* is in a *_State_*, it has discrete responsibilities, 
-concerns and behaviours. So, States are how we reason about what a Machine 
+When a *_Machine_* is in one of these *_State_*, it has discrete responsibilities, 
+concerns and behaviours. Because a FSM can only be in one State at a time, States are how we reason about what a Machine 
 is doing at particular point of time. When an FSM changes *_State_*, it goes from
 doing one thing to doing another thing. 
 
@@ -181,6 +180,14 @@ Over time, when certain events occur the Machine moves from one State to another
 State changes are called *_Transitions_*. Sometimes there are certain *_Actions_* (behaviour/computation) associated with 
 a *_Transition_*. But, to repeat, the significant thing about a State change is that the Machine goes from
 doing one thing to doing another thing.
+
+.Being in a State:
+* can involve passive waiting (for some eternal event to Trigger a Transition)
+* can mean undertaking "an actvity" which will come to an end, and this "end" is a Triggering event.
+* can mean undertaking "an activity" which does not come to an end, and the Machine only moves on because of an external event 
+* can be a https://www.uml-diagrams.org/state-machine-diagrams.html#pseudostate[a PseudoStates] which involves a choice about the next Trigger/Transition/State. 
+
+This library's FSM has all of this. `Problem` for example is very much a choice `PseudoState`. `Waiting` is a passive State. 
 
 The `Logical State Handlers` you will be asked to write are about "doing a thing" when the Machine is in a
 particular State. And, as a result, they implement the behaviour for one part of this library's FSM.
@@ -204,6 +211,8 @@ for one of the boxes
 ours. We could, for example, have teased the "Problem" Logical State out into
 four distinct states: "Timed Out", "Connection Problem", "Recoverable Server
 Problem" and "Unrecoverable Server Problem".  We decided not to do that because of, well, reasons. My point is that there isn't a "right" model, just one that is fit for purpose.
+
+NOTE: 
 
 == Requesting
 
