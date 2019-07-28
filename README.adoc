@@ -173,21 +173,22 @@ Machine with a fixed, finite number of *_States_*.
 
 When a *_Machine_* is in one of these *_State_*, it has discrete responsibilities, 
 concerns and behaviours. Because a FSM can only be in one State at a time, States are how we reason about what a Machine 
-is doing at particular point of time. When an FSM changes *_State_*, it goes from
-doing one thing to doing another thing. 
+is doing at particular point of time. 
 
-Over time, when certain events occur the Machine moves from one State to another. These events are called *_Triggers_* and the 
-State changes are called *_Transitions_*. Sometimes there are certain *_Actions_* (behaviour/computation) associated with 
+When an FSM changes *_State_*, it goes from doing one thing to doing another thing. 
+
+Over time, when certain events occur, the Machine changes from one State to another. 
+These events are called *_Triggers_* and a change in State is called a *_Transition_*. Sometimes there are certain *_Actions_* (behaviour/computation) associated with 
 a *_Transition_*. But, to repeat, the significant thing about a State change is that the Machine goes from
 doing one thing to doing another thing.
 
-.Being in a State:
-* can involve passive waiting (for some eternal event to Trigger a Transition)
-* can mean undertaking "an actvity" which will come to an end, and this "end" is a Triggering event.
-* can mean undertaking "an activity" which does not come to an end, and the Machine only moves on because of an external event 
-* can be a https://www.uml-diagrams.org/state-machine-diagrams.html#pseudostate[a PseudoStates] which involves a choice about the next Trigger/Transition/State. 
+.What does a Machine do in a State?:
+* it can do nothing (waiting for a Trigger) 
+* it can undertake "an activity" which naturally comes to an end (this ending might causes a Trigger)
+* it can undertake "an activity" which does not naturally come to an end (until there is a Trigger)
+* it can compute the next Trigger. These are sometimes called https://www.uml-diagrams.org/state-machine-diagrams.html#pseudostate[PseudoStates]. 
 
-This library's FSM has all of this. `Problem` for example is very much a choice `PseudoState`. `Waiting` is a passive State. 
+This library's FSM contains examples of all these kinds of State. 
 
 The `Logical State Handlers` you will be asked to write are about "doing a thing" when the Machine is in a
 particular State. And, as a result, they implement the behaviour for one part of this library's FSM.
