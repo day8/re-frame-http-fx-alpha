@@ -8,10 +8,7 @@
 :icons: font
 
 > Don't use this library - the code is not ready.  + 
-> However ... we practice RDD (README-Driven Development) and this document describes + 
-> what you'll be getting. You can *_influence our design_* by reading it + 
-> and then opening an issue with your thoughts, ideas or unhandled use cases. + 
-> Or, more casually, tweet me @wazound
+
 
 image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
 
@@ -169,14 +166,21 @@ nominating which FSM to use (or you will implicitly be using your default FSM)
 
 == The FSM
 
-An HTTP request is a multi-step process which plays out over time.
+An HTTP request is a multi-step process which plays out over time. This library models this process as a *_Machine_*.
+
+By a *_Machine_*, I’m referring to the abstract concept of something which does something. 
+This library uses a specific kind of Machine called a _*Finte State Machine (FSM)_*, which 
+is one that has a fixed, finite number of *_States_*. 
+
+In each State, a  *_Machine_* has discrete responsibilities, concerns and behaviours. And a 
+FSM can only be in one State at a time. 
 
 This library formalises that process as *_a Machine_*. And, specifically, it 
 uses a Finte State Machine (FSM), which has a fixed, finite number of *_States_*. 
 
 States allow us to reason about what a Machine 
 is doing because:
-* a FSM can only be in one State at a time
+* 
 * in each State the  *_Machine_* has discrete responsibilities, 
 concerns and behaviours
 
@@ -806,4 +810,49 @@ Example implementation:
 * add optional  `:cancel` event handler ?? 
 * ??? add an interceptor to assert the correctness of the Transitions - Logical State Handlers
 * anything we should be doing around stubbing and testing?
+* add trace to FSM
+
+=== FAQ
+
+1. Your FSM is wrong 
+2. Why don't you use gards? 
+
+=== Explaining State Machines 
+
+A *_control system_* determines its outputs depending on its inputs.
+
+If the present input values are sufficient to determine the outputs the control system
+is a *_combinatorial system_*.
+
+For example, a traffic light control system could be constructed like this: 
+* the only input is the current time (the input changes every second)
+* strip the input time down to just the seconds part (a number between 0 and 59)
+* Apply the following rules:
+** if the seconds is between 0 and 27 seconds then the output is "green"
+** if the seconds is between 28 and 33 seconds, the output is "orange" 
+** if the seconds is between 34 and 59 seconds, the output is "red"
+
+At any point in this system's fucntioning, knowing the input (time) is 
+sufficient to know the output (green,orange,red). 
+
+If, on the other hand, the control system needs to know the history of its inputs 
+to determine its output the system is a *_sequential system_*.
+
+To function, a *_sequential system_* must store a representation of its
+input history. And this representation is known as *_State_*. 
+
+Imagine a traffic lights control system which XXX
+
+If the State was a 16 bit integer, the number of States would be 65536. 
+
+
+
+
+
+
+
+
+
+A state machine is the oldest known formal model for sequential behaviour i.e. behaviour that cannot
+be defined by the knowledge of inputs only, but depends on the history of the inputs.
 
