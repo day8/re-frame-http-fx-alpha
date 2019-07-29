@@ -2,7 +2,8 @@
   (:require
     [goog.object :as obj]
     [re-frame.core :refer [reg-fx reg-event-fx dispatch console]]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [clojure.set]))
 
 ;; Utilities
 ;; =============================================================================
@@ -212,26 +213,44 @@
          (filter identity))))
 
 (defn conj-profiles
-  "Returns a new map with the seq-of-profile-maps 'added' to the sub-effect map."
-  [m seq-of-profile-maps]
+  "Returns a new request-state map with the seq-of-profile-maps 'added'."
+  [request-state seq-of-profile-maps]
   (reduce
-    (fn [acc {:keys [combine values]}]
+    (fn [ret {:keys [values]}]
       (reduce-kv
-        (fn [foo k f]
-          (let [existing (get acc k)
-                addition (get values k)]
-            (assoc foo k (f existing addition))))
-        (merge values acc)
-        combine))
-    m
+        (fn [ret k profile-value]
+          (let [existing-value (get ret k)
+                v' (cond
+                     (and (map? profile-value)
+                          (map? existing-value))
+                     (merge existing-value profile-value)
+
+                     (and (set? profile-value)
+                          (set? existing-value))
+                     (clojure.set/union existing-value profile-value)
+
+                     (and (string? profile-value)
+                          (string? existing-value))
+                     (str profile-value existing-value)
+
+                     (and (coll? profile-value)
+                          (coll? existing-value))
+                     (concat existing-value profile-value)
+
+                     :default
+                     profile-value)]
+            (assoc ret k v')))
+        ret
+        values))
+    request-state
     seq-of-profile-maps))
 
-(defn m+profiles
+(defn +profiles
   ""
-  [{:keys [profiles] :as m}]
+  [{:keys [profiles] :as request-state}]
   (->> profiles
-      (get-profiles)
-      (conj-profiles m)))
+       (get-profiles)
+       (conj-profiles request-state)))
 
 ;; Requests
 ;; =============================================================================
@@ -379,7 +398,7 @@
                      (merge {:request-id request-id
                              :url        url'
                              :state      :requested})
-                     (m+profiles))
+                     (+profiles))
         js-controller (js/AbortController.)]
     (swap! request-id->request-and-controller
            #(assoc %1 %2 %3)

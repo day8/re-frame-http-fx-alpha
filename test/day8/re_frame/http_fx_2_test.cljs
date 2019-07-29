@@ -108,14 +108,17 @@
 ;; Profiles
 ;; =============================================================================
 
+; {:params {:sort :desc, :jwt "eyJhbGc..."}, :headers {:accept "application/json", :authorization "Bearer eyJhbGc..."}, :path [:a :b :c :d :e], :fsm {:in-process [:in-process-a], :in-problem [:in-problem-b]}, :timeout 5000, :profiles [:xyz :jwt], :action :GET, :url "http://api.example.com/articles"}
+; {:params {:sort :desc, :jwt "eyJhbGc..."}, :headers {:accept "application/json", :authorization "Bearer eyJhbGc..."}, :path [:d :e],          :fsm {:in-process [:in-process-a], :in-problem [:in-problem-b]}, :timeout 5000 :profiles [:xyz :jwt], :action :GET, :url "http://api.example.com/articles",}))
+
 (deftest conj-profiles-test
   (is (= {:params {:sort :desc
                    :jwt  "eyJhbGc..."}
                   :headers    {:accept        "application/json"
                                :authorization "Bearer eyJhbGc..."}
                   :path       [:a :b :c :d :e]
-                  :in-process [:in-process-a]
-                  :in-problem [:in-problem-a]
+                  :fsm {:in-process [:in-process-a]
+                        :in-problem [:in-problem-b]}
                   :timeout    5000
                   :profiles   [:xyz :jwt]
                   :action     :GET
@@ -124,21 +127,18 @@
            {:profiles   [:xyz :jwt]
             :action     :GET
             :url        "http://api.example.com/articles"
-            :in-process [:in-process-a]
-            :in-problem [:in-problem-a]
+            :fsm {:in-process [:in-process-a]
+                  :in-problem [:in-problem-a]}
             :params     {:sort :desc}
             :headers    {:accept "application/json"}
             :path       [:a :b :c]}
            [{:reg-profile :xyz
-             :values      {:in-problem [:in-problem-b]
+             :values      {:fsm {:in-problem [:in-problem-b]}
                            :timeout    5000}}
             {:reg-profile :jwt
              :values      {:params  {:jwt "eyJhbGc..."}
                            :headers {:authorization "Bearer eyJhbGc..."}
-                           :path    [:d :e]}
-             :combine     {:params  conj
-                           :headers conj
-                           :path    into}}]))))
+                           :path    [:d :e]}}]))))
 
 ;; Requests
 ;; =============================================================================
