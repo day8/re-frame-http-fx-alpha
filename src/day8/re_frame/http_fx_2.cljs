@@ -315,7 +315,9 @@
               (update-in [request-id ::request] merge merge-request-state))
       (update-in current [request-id ::request] assoc
                  :state :failed
-                 :failure :fsm))))
+                 :problem :fsm
+                 :problem-from-state from-state
+                 :problem-to-state to-state))))
 
 ;; TODO handle undefined event handler(s); default event handlers
 
