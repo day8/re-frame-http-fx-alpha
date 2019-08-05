@@ -381,7 +381,6 @@
 (defn fetch
   "Initiate the request. Returns nil."
   [{:keys [request-id]}]
-  (fsm->! request-id :waiting)
   (let [{::keys [request js-controller]} (get @request-id->request-and-controller request-id)
         {:keys [url timeout]} request]
     (-> (timeout-race (js/fetch url (request->js-init request js-controller)) timeout)
