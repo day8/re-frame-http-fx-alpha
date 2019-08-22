@@ -13,6 +13,8 @@
                                   [karma-reporter "3.1.0"]]
                    :plugins      [[lein-shell "0.5.0"]]}}
 
+  :plugins [[lein-shadow "0.1.5"]]
+  
   :clean-targets  [:target-path
                    "resources/public/js/test"]
 
@@ -23,12 +25,23 @@
 
   :test-paths     ["test"]
 
-  :aliases {"dev" ["do"
-                   ["shell" "npm" "install"]
-                   ["with-profile" "dev" "run" "-m" "shadow.cljs.devtools.cli" "watch" "browser-test"]]
-            "ci"  ["do"
-                   ["shell" "npm" "install"]
-                   ["run" "-m" "shadow.cljs.devtools.cli" "compile" "ci"]
+  :shadow-cljs {:nrepl  {:port 8777}
+
+                :builds {:browser-test
+                         {:target    :browser-test
+                          :ns-regexp "-test$"
+                          :test-dir  "resources/public/js/test"
+                          :devtools  {:http-root "resources/public/js/test"
+                                      :http-port 8290}}
+
+                         :karma-test
+                         {:target    :karma
+                          :ns-regexp "-test$"
+                          :output-to "target/karma-test.js"}}}
+
+  :aliases {"dev-auto" ["with-profile" "dev" "shadow" "watch" "browser-test"]
+            "test-once"  ["do"
+                   ["shadow" "compile" "karma-test"]
                    ["shell" "karma" "start" "--single-run" "--reporters" "junit,dots"]]}
 
   :deploy-repositories [["clojars" {:sign-releases false

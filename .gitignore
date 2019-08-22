@@ -5,4 +5,6 @@
 /target/
 /node_modules/
 /.shadow-cljs/
+/package.json
+/shadow-cljs.edn
 /resources/public/js/test/
