@@ -2,10 +2,12 @@
   :description  "A re-frame effects handler for fetching resources (including across the network)."
   :url          "https://github.com/Day8/re-frame-http-fx-2.git"
   :license      {:name "MIT"}
-  :dependencies [[thheller/shadow-cljs       "2.8.48" :scope "provided"]
-                 [org.clojure/clojure        "1.10.1" :scope "provided"]
-                 [org.clojure/clojurescript  "1.10.520" :scope "provided"]
-                 [re-frame                   "0.10.8" :scope "provided"]]
+  :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.520" :scope "provided"
+                  :exclusions [com.google.javascript/closure-compiler-unshaded
+                               org.clojure/google-closure-library]]
+                 [thheller/shadow-cljs "2.8.51" :scope "provided"]
+                 [re-frame "0.10.9" :scope "provided"]]
 
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
                                   [karma-reporter "3.1.0"]]
