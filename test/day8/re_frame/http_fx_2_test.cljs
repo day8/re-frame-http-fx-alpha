@@ -161,7 +161,9 @@
            :cancelled
            nil)))
   (is (= {:http-xyz {::http-fx-2/request       {:state :failed
-                                                       :failure :fsm}
+                                                       :problem :fsm
+                                                       :problem-from-state :waiting
+                                                       :problem-to-state :done}
                      ::http-fx-2/js-controller {}}}
          (http-fx-2/fsm-swap-fn
            {:http-xyz {::http-fx-2/request       {:state :waiting}
