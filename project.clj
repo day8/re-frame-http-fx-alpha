@@ -16,7 +16,6 @@
   :plugins [[lein-shadow "0.1.5"]]
   
   :clean-targets  [:target-path
-                   ".shadow-cljs"
                    "shadow-cljs.edn"
                    "package.json"
                    "package-lock.json"
