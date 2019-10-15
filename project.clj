@@ -1,6 +1,6 @@
 (defproject day8.re-frame/http-fx-2 "2.0.0-SNAPSHOT"
   :description  "A re-frame effects handler for fetching resources (including across the network)."
-  :url          "https://github.com/Day8/re-frame-http-fx-2.git"
+  :url          "https://github.com/day8/re-frame-http-fx-2.git"
   :license      {:name "MIT"}
   :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"

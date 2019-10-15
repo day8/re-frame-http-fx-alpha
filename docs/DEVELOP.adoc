@@ -12,7 +12,7 @@
 In a terminal:
 
 ```text
-$ git clone git@github.com:Day8/re-frame-http-fx-2.git
+$ git clone git@github.com:day8/re-frame-http-fx-2.git
 $ cd re-frame-http-fx-2
 $ npm install
 $ lein run -m shadow.cljs.devtools.cli watch browser-test

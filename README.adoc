@@ -10,14 +10,14 @@
 > Don't use this library - the code is not ready.  + 
 
 
-image:https://circleci.com/gh/Day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/Day8/re-frame-http-fx-2"]
+image:https://circleci.com/gh/day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/day8/re-frame-http-fx-2"]
 
 
 == Easy and Robust HTTP Requests
 
 A re-frame library for performing HTTP requests using an effect with key `:http`
 
-It is an improved version of the original https://github.com/Day8/re-frame-http-fx[re-frame-http-fx library]
+It is an improved version of the original https://github.com/day8/re-frame-http-fx[re-frame-http-fx library]
 
 == Overview
 
