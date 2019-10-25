@@ -53,7 +53,7 @@
   (let [mode (or mode "same-origin")
         credentials (or credentials "include")
         redirect (or redirect "follow")]
-    (cond->
+    (doto
       #js {;; There is always a controller, as in our impl all requests can be
            ;; aborted.
            :signal      (.-signal js-controller)
@@ -74,23 +74,18 @@
            :redirect    redirect}
 
       ;; Everything else is optional...
-      headers
-      (obj/set "headers" (headers->js headers))
+      (cond-> headers (obj/set "headers" (headers->js headers)))
 
-      body
-      (obj/set "body" body)
+      (cond-> body (obj/set "body" body))
 
       ;; Possible: default no-store reload no-cache force-cache only-if-cached
-      cache
-      (obj/set "cache" cache)
+      (cond-> cache (obj/set "cache" cache))
 
       ;; Possible: no-referrer client
-      referrer
-      (obj/set "referrer" referrer)
+      (cond-> referrer (obj/set "referrer" referrer))
 
       ;; Sub-resource integrity string
-      integrity
-      (obj/set "integrity" integrity))))
+      (cond-> integrity (obj/set "integrity" integrity)))))
 
 (defn js-headers->clj
   "Returns a new ClojureScript map of the js/Headers JavaScript object."
