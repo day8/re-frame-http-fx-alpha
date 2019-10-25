@@ -10,7 +10,7 @@
 > Don't use this library - the code is not ready.  + 
 
 
-image:https://circleci.com/gh/day8/re-frame-http-fx-2.svg?style=svg["CircleCI", link="https://circleci.com/gh/day8/re-frame-http-fx-2"]
+image:https://github.com/day8/re-frame-http-fx-2/workflows/ci/badge.svg["ci", link="https://github.com/day8/re-frame-http-fx-2/actions?workflow=ci"]
 
 
 == Easy and Robust HTTP Requests
