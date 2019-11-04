@@ -1,7 +1,20 @@
-(defproject day8.re-frame/http-fx-2 "2.0.0-SNAPSHOT"
+(defproject day8.re-frame/http-fx-2 "see :git-version below https://github.com/arrdem/lein-git-version"
   :description "A re-frame effects handler for fetching resources (including across the network)."
   :url "https://github.com/day8/re-frame-http-fx-2.git"
   :license {:name "MIT"}
+
+  :git-version
+  {:status-to-version
+   (fn [{:keys [tag version branch ahead ahead? dirty?] :as git}]
+     (assert (re-find #"\d+\.\d+\.\d+" tag)
+       "Tag is assumed to be a raw SemVer version")
+     (if (and tag (not ahead?) (not dirty?))
+       tag
+       (let [[_ prefix patch] (re-find #"(\d+\.\d+)\.(\d+)" tag)
+             patch            (Long/parseLong patch)
+             patch+           (inc patch)]
+         (format "%s.%d-%s-SNAPSHOT" prefix patch+ ahead))))}
+
   :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"
                   :exclusions [com.google.javascript/closure-compiler-unshaded
@@ -13,7 +26,8 @@
                                   [karma-reporter "3.1.0"]]
                    :plugins      [[lein-shell "0.5.0"]]}}
 
-  :plugins [[lein-shadow "0.1.5"]]
+  :plugins [[me.arrdem/lein-git-version "2.0.3"]
+            [lein-shadow "0.1.5"]]
 
   :clean-targets [:target-path
                   "shadow-cljs.edn"
@@ -55,11 +69,4 @@
                                     :username      :env/CLOJARS_USERNAME
                                     :password      :env/CLOJARS_PASSWORD}]]
 
-  :release-tasks [["vcs" "assert-committed"]
-                  ["change" "version" "leiningen.release/bump-version" "release"]
-                  ["vcs" "commit"]
-                  ["vcs" "tag" "v" "--no-sign"]
-                  ["deploy" "clojars"]
-                  ["change" "version" "leiningen.release/bump-version"]
-                  ["vcs" "commit"]
-                  ["vcs" "push"]])
+  :release-tasks [["deploy" "clojars"]])
