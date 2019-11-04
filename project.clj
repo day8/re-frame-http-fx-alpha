@@ -1,6 +1,6 @@
-(defproject    day8.re-frame/http-fx-2 "see :git-version below https://github.com/arrdem/lein-git-version"
+(defproject    day8.re-frame/http-fx-alpha "see :git-version below https://github.com/arrdem/lein-git-version"
   :description "A re-frame effects handler for fetching resources (including across the network)."
-  :url         "https://github.com/day8/re-frame-http-fx-2.git"
+  :url         "https://github.com/day8/re-frame-http-fx-alpha.git"
   :license     {:name "MIT"}
 
   :git-version

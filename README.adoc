@@ -10,7 +10,7 @@
 > Don't use this library - the code is not ready.  + 
 
 
-image:https://github.com/day8/re-frame-http-fx-2/workflows/ci/badge.svg["ci", link="https://github.com/day8/re-frame-http-fx-2/actions?workflow=ci"]
+image:https://github.com/day8/re-frame-http-fx-alpha/workflows/ci/badge.svg["ci", link="https://github.com/day8/re-frame-http-fx-alpha/actions?workflow=ci"]
 
 
 == Easy and Robust HTTP Requests

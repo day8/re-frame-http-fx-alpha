@@ -1,4 +1,4 @@
-(ns day8.re-frame.http-fx-2
+(ns day8.re-frame.http-fx-alpha
   (:require
     [goog.object :as obj]
     [re-frame.core :refer [reg-fx reg-event-fx dispatch console]]
