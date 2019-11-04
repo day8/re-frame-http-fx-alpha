@@ -35,8 +35,8 @@
   (is (= "?sort=desc&start=0"
          (http-fx-alpha/params->str {:sort :desc :start 0})))
   (is (= "?fq=Expect%20nothing%2C%20%5Ba-z%26%26%5B%5Eaeiou%5D%5D&debug=timing"
-         (http-fx-alpha/params->str {:fq "Expect nothing, [a-z&&[^aeiou]]"}
-                                 :debug 'timing))))
+         (http-fx-alpha/params->str {:fq "Expect nothing, [a-z&&[^aeiou]]"
+                                     :debug 'timing}))))
 
 (deftest headers->js-test
   (let [js-headers (http-fx-alpha/headers->js {:content-type "application/json"})]
