@@ -10,8 +10,12 @@
 > Don't use this library - the code is not ready.  + 
 
 
-image:https://github.com/day8/re-frame-http-fx-alpha/workflows/ci/badge.svg["ci", link="https://github.com/day8/re-frame-http-fx-alpha/actions?workflow=ci"]
-
+image:https://github.com/day8/re-frame-http-fx-alpha/workflows/ci/badge.svg["CI", link="https://github.com/day8/re-frame-http-fx-alpha/actions?workflow=ci"]
+image:https://img.shields.io/github/v/tag/day8/re-frame-http-fx-alpha?style=flat["GitHub tag (latest by date)", link="https://github.com/day8/re-frame-http-fx-alpha/tags"]
+image:https://img.shields.io/clojars/v/day8.re-frame/http-fx-alpha.svg["Clojars Project", link="https://clojars.org/day8.re-frame/http-fx-alpha"]
+image:https://img.shields.io/github/issues-raw/day8/re-frame-http-fx-alpha?style=flat["GitHub issues", link="https://github.com/day8/re-frame-http-fx-alpha/issues"]
+image:https://img.shields.io/github/issues-pr/day8/re-frame-http-fx-alpha?style=flat["GitHub pull requests", link="https://github.com/day8/re-frame-http-fx-alpha/pulls"]
+image:https://img.shields.io/github/license/day8/re-frame-http-fx-alpha?style=flat["License", link="https://github.com/day8/re-frame-http-fx-alpha/blob/master/LICENSE"]
 
 == Easy and Robust HTTP Requests
 
