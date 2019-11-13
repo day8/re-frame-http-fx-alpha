@@ -26,7 +26,7 @@
                  [thheller/shadow-cljs      "2.8.69" :scope "provided"]
                  [re-frame                  "0.10.9" :scope "provided"]]
 
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
+  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.11"]
                                   [karma-reporter     "3.1.0"]]}}
 
   :plugins [[me.arrdem/lein-git-version "2.0.3"]
