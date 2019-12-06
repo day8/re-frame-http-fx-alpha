@@ -15,7 +15,7 @@
                                   [karma-reporter     "3.1.0"]]}}
 
   :plugins      [[day8/lein-git-inject "0.0.2"]
-                 [lein-shadow          "0.1.6"]
+                 [lein-shadow          "0.1.7"]
                  [lein-shell           "0.5.0"]]
 
   :middleware   [leiningen.git-inject/middleware]
